@@ -3,11 +3,10 @@
 AlarmWatcher is a versatile, self-hosted and intuitive to use alarm management system. It is designed to serve as the central hub for handling alarms across various applications and systems. Whether you're managing alarms for smart home, industrial equipment, or other interconnected devices, AlarmWatcher simplifies alarm handling.
 
 <a target="_blank" href="https://github.com/johnny-de/alarmwatcher"><img src="https://img.shields.io/github/stars/johnny-de/alarmwatcher?style=flat" /></a> 
+<a target="_blank" href="https://github.com/johnny-de/alarmwatcher"><img src="https://img.shields.io/github/v/release/johnny-de/alarmwatcher" /></a> 
+<a target="_blank" href="https://github.com/johnny-de/alarmwatcher"><img src="https://img.shields.io/github/last-commit/johnny-de/alarmwatcher" /></a>
 <a target="_blank" href="https://hub.docker.com/r/johnny-de/alarmwatcher"><img src="https://img.shields.io/docker/pulls/johnny-de/alarmwatcher" /></a> 
 <a target="_blank" href="https://hub.docker.com/r/johnny-de/alarmwatcher"><img src="https://img.shields.io/docker/v/johnny-de/alarmwatcher/latest?label=docker%20image%20ver" /></a>
-<a target="_blank" href="https://hub.docker.com/r/johnny-de/alarmwatcher"><img src="https://img.shields.io/github/v/release/johnny-de/alarmwatcher" /></a> 
-<a target="_blank" href="https://github.com/johnny-de/alarmwatcher"><img src="https://img.shields.io/github/last-commit/johnny-de/alarmwatcher" /></a>
-</a>
 
 ## Key Features
 
