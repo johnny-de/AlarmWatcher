@@ -14,7 +14,7 @@ AlarmWatcher is a versatile, self-hosted and intuitive to use alarm management s
 - **Centralized Alarm Management:** Aggregate and manage alarms from multiple systems in one place.
 - **Customizable Alarm Handling:** Define alarm priorities, require acknowledgment, and configure auto-deletion.
 - **Built-In Expiration Mechanism:** Automatically remove alarms after a set duration to avoid clutter.
-- **Simple, Yet Powerful REST-API:** Easily integrate with any system through a flexible and straightforward http-REST-API.
+- **Simple, Yet Powerful API:** Easily integrate with any system through a flexible and straightforward http-API.
 - **Web-based Frontend:** View and manage alarms through an intuitive web interface, allowing for custom filters.
 
 ### Alarm Handling
