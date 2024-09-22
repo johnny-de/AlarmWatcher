@@ -24,7 +24,7 @@ AlarmWatcher is built around an mechanism where every alarm is identified by a u
 1. The alarm is **cleared**.
 2. The defined **duration** for that specific alarm expires.
 
-Each alarm must belong to one of the predefined **alarm classes**, which determine its priority and how it is displayed in the system:
+Each alarm must belong to one of the predefined alarm classes, which determine its priority and how it is displayed in the system:
 
 1. **Alarm (Highest Priority - Red):** Critical issues requiring immediate attention.
 2. **Warning (Medium Priority - Orange):** Important issues that are not yet critical, but may soon become critical if not addressed.
