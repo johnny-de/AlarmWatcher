@@ -17,7 +17,7 @@ AlarmWatcher is a versatile, self-hosted and intuitive to use alarm management s
 - **Simple, Yet Powerful REST-API:** Easily integrate with any system through a flexible and straightforward http-REST-API.
 - **Web-based Frontend:** View and manage alarms through an intuitive web interface, allowing for custom filters.
 
-## Alarm Handling
+### Alarm Handling
 
 AlarmWatcher is built around an mechanism where every alarm is identified by a unique ID. Once an alarm is raised, it remains active in the system until one of two conditions is met:
 
@@ -32,7 +32,7 @@ Each alarm must belong to one of the predefined **alarm classes**, which determi
 
 Alarms are handled entirely by the server. Users can view and manage alarms via a web-based frontend, which supports advanced filtering to make it easy to find and respond to specific alarms.
 
-## Acknowledgment Mechanism
+### Acknowledgment Mechanism
 
 AlarmWatcher also includes an acknowledgment mechanism to ensure critical alarms are not overlooked. When an alarm is raised, it can be marked as requiring acknowledgment. This ensures that even if the alarm is cleared or its defined duration expires, the alarm will remain visible in the system until a user acknowledges it.
 This feature is especially useful for high-priority alarms, ensuring that critical incidents receive the necessary attention and are not missed by automation or system rules.
