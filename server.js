@@ -295,12 +295,12 @@ function deleteExpiredAlarms() {
     date = Date.now();
     currentTime = Math.floor(date / 1000);  // Get current UNIX timestamp
 
-    db.run(`DELETE FROM alarms WHERE delete_time IS NOT NULL AND delete_time <= ?`, [currentTime], function (err) {
+    db.run(`DELETE FROM alarms WHERE delete_time IS NOT NULL AND (require_ack = 0 OR (require_ack = 1 AND ack_time IS NOT NULL)) AND delete_time <= ?`, [currentTime], function (err) {
         if (err) {
             console.error("Error deleting expired alarms: " + err.message);
         } else {
             if (this.changes > 0) {
-                console.log(`${this.changes} alarm(s) deleted successfully at ${currentTime} (${new Date(date).toLocaleString()}).`);
+                console.log("alarm(s) deleted successfully at ${currentTime} (${new Date(date).toLocaleString()}).");
             }
         }
     });
