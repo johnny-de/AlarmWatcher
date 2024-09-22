@@ -45,39 +45,34 @@ The development of AlarmWatcher is organized into clear milestones to ensure smo
 ### Version 1.0.0
 
 The first major release (v1.0.0) will focus on delivering a fully functioning backend and a user-friendly frontend, along with essential features for alarm management.
-
 - **Backend:**
   - Complete and thoroughly test the backend for alarm management, handling alarm states, acknowledgments, and filtering.
   - Ensure stability and reliability for all server-side operations.
-
 - **Frontend:**
   - Implement a fully functional, web-based frontend for monitoring and managing alarms.
   - Integrate notification support, allowing browsers to push notifications into the underlying OS notification systems (e.g., Windows, macOS, Linux).
-  
 - **Docker Image:**
   - Create and publish a Docker image on DockerHub to simplify deployment and installation.
+- **Wiki Documentation:**
+  - Prepare and publish a detailed Wiki to guide users on how to install, configure, and use AlarmWatcher. This will ensure that users can easily set up the system and take advantage of all its features.
 
 ### Version 2.0.0
 
 The second major release (v2.0.0) will enhance AlarmWatcher with additional features and interfaces.
-
 - **HTTPS Support:**
   - Add support for secure connections using HTTPS, providing encryption for alarm monitoring and management.
-  
 - **Email Interface:**
   - Introduce an interface for receiving alarms via email (SMTP), enabling users to receive critical alerts directly in their inbox.
 
 ### Future Milestones
 
 Beyond the core milestones for AlarmWatcher, additional features and extensions are planned to broaden the system's reach and usability.
-
 - **Open-Source Android App:**
   - Develop and release an open-source Android app that allows users to view alarms and receive push notifications on their mobile devices. This will provide greater flexibility for remote alarm monitoring.
-
 - **Public Demo:**
   - Set up a public, free-to-use demo instance of AlarmWatcher, allowing users to test its features with the following limitation: alarms will be saved for a maximum of 100 days.
 
 
-### Bug Reports / Feature Requests
+## Bug Reports / Feature Requests
 
 If you want to report a bug or request a new feature, feel free to open a [new issue](https://github.com/johnny-de/alarmwatcher/issues).
