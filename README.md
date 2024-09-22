@@ -56,7 +56,7 @@ The first major release (v1.0.0) will focus on delivering a fully functioning ba
 
 The second major release (v1.2.0) will enhance AlarmWatcher with additional features and interfaces.
 - **HTTPS Support:** Add support for secure connections using HTTPS.
-- **Email Interface:** Introduce an interface for receiving alarms via email (SMTP).
+- **Email Interface:** Introduce an interface for receiving alarms via email (SMTP). Idea is to provide predefined addresses (e.g. uptime-kuma@alarmwatcher) and also allowed users to create custom email-interfaces to raise or clear alarms based on specific keywords in incoming emails.
 
 ### Version 1.3.0
 
@@ -70,7 +70,7 @@ The third major release (v1.3.0) will focus on building a comprehensive alarm hi
 Beyond the core milestones for AlarmWatcher, additional features and extensions are planned to broaden the system's reach and usability.
 - **Open-Source Android App:** Develop and release an open-source Android app that allows users to view alarms and receive push notifications on their mobile devices.
 - **Public Demo:** Set up a public, free-to-use demo instance of AlarmWatcher, allowing users to test its features with the following limitation: alarms will be saved for a maximum of 100 days.
-
+- **Node-RED Integration:** Create AlarmWatcher nodes for Node-RED.
 
 ## Bug Reports / Feature Requests
 
