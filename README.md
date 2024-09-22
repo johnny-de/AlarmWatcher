@@ -52,15 +52,15 @@ The first major release (v1.0.0) will focus on delivering a fully functioning ba
 - **Docker Image:** Create and publish a Docker image on DockerHub to simplify deployment and installation.
 - **Wiki Documentation:** Prepare and publish a detailed Wiki to guide users on how to install, configure, and use AlarmWatcher.
 
-### Version 1.2.0
+### Version 1.1.0
 
-The second major release (v1.2.0) will enhance AlarmWatcher with additional features and interfaces.
+The second major release (v1.1.0) will enhance AlarmWatcher with additional features and interfaces.
 - **HTTPS Support:** Add support for secure connections using HTTPS.
 - **Email Interface:** Introduce an interface for receiving alarms via email (SMTP). Idea is to provide predefined addresses (e.g. uptime-kuma@alarmwatcher) and also allowed users to create custom email-interfaces to raise or clear alarms based on specific keywords in incoming emails.
 
-### Version 1.3.0
+### Version 1.2.0
 
-The third major release (v1.3.0) will focus on building a comprehensive alarm history system, improving database performance, and optimizing filtering.
+The third major release (v1.2.0) will focus on building a comprehensive alarm history system, improving database performance, and optimizing filtering.
 - **Alarm Archiving:** Introduce an alarm archiving feature, allowing alarms to be stored beyond their active state, creating a history of all alarms.
 - **Database Optimization:** Optimize the database structure to handle larger datasets efficiently.
 - **Advanced Filtering:** Improve the filtering capabilities of the frontend, enabling more advanced search options and filtering based on alarm history.
