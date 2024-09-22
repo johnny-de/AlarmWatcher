@@ -8,7 +8,7 @@ AlarmWatcher is a versatile and intuitive alarm management system designed to se
 - **Scalability:** Adaptable for both small-scale smart home environments and large industrial operations.
 - **Customizable Alarm Handling:** Define alarm priorities, require acknowledgment, and configure auto-deletion.
 - **Built-In Expiration Mechanism:** Automatically remove alarms after a set duration to avoid clutter.
-- **Simple, Yet Powerful API:** Easily integrate with any system through a flexible and straightforward API.
+- **Simple, Yet Powerful REST-API:** Easily integrate with any system through a flexible and straightforward http-REST-API.
 - **Web-based Frontend:** View and manage alarms through an intuitive web interface, allowing for custom filters to quickly identify active alarms.
 
 ## Alarm Handling
@@ -28,7 +28,7 @@ Alarms are handled entirely by the server, ensuring reliable and consistent beha
 
 ## Acknowledgment Mechanism
 
-AlarmWatcher also includes an acknowledgment mechanism to ensure critical alarms are not overlooked. When an alarm is raised, it can be marked as **requiring acknowledgment**. This ensures that even if the alarm is cleared or its defined duration expires, the alarm will remain visible in the system until a user acknowledges it.
+AlarmWatcher also includes an acknowledgment mechanism to ensure critical alarms are not overlooked. When an alarm is raised, it can be marked as requiring acknowledgment. This ensures that even if the alarm is cleared or its defined duration expires, the alarm will remain visible in the system until a user acknowledges it.
 
 Acknowledgment ensures that alarms marked as important are not automatically removed, encouraging users to take manual action and confirm that the alarm has been reviewed. Only once an alarm is acknowledged by the user will it be removed from the active list or auto-deleted.
 
