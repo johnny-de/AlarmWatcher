@@ -52,6 +52,22 @@ const db = new sqlite3.Database('./alarms.db', (err) => {
 // API
 /**
  * @swagger
+ * /api/serverTime:
+ *   get:
+ *     tags:
+ *       - Alarm list
+ *     description: Get the current server time as a UNIX timestamp.
+ *     responses:
+ *       200:
+ *         description: Server time as a UNIX timestamp (e.g., 1727206611)
+ */
+app.get('/api/serverTime', (req, res) => {
+    // Return current UNIX timestamp in seconds
+    return res.status(200).send(Math.floor(Date.now() / 1000).toString());
+});
+
+/**
+ * @swagger
  * /api/raiseAlarm:
  *   get:
  *     tags:
