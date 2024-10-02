@@ -19,9 +19,14 @@ const swaggerOptions = {
     apis: ['server.js'],
 }
 
+// Options to customize Swagger UI
+const swaggerUiOptions = {
+    customCss: '.swagger-ui .auth-wrapper { display: none !important; }'  // Custom CSS to hide the authorize button
+};
+
 // Define swagger docs
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
-app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs));
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs, swaggerUiOptions));
 
 // Create and connect to an SQLite database
 const db = new sqlite3.Database('./alarms.db', (err) => {
@@ -49,6 +54,12 @@ const db = new sqlite3.Database('./alarms.db', (err) => {
     }
 });
 
+// Website
+app.get('/', (req, res) => {
+    // Return index.html
+    return res.status(200).sendFile(__dirname + '/index.html');
+});
+
 // API
 /**
  * @swagger
@@ -72,7 +83,7 @@ app.get('/api/serverTime', (req, res) => {
  *   get:
  *     tags:
  *       - Alarm list
- *     description: Add alarm to AlarmWatcher.
+ *     description: Add an alarm to AlarmWatcher.
  *     parameters:
  *       - name: alarm_id
  *         description: Unique identifier of the alarm (alarm name)
@@ -199,7 +210,7 @@ app.get('/api/ackAlarm', (req, res) => {
  *   get:
  *     tags:
  *       - Alarm list
- *     description: Delete an from AlarmWatcher.
+ *     description: Delete an alarm from AlarmWatcher.
  *     parameters:
  *       - name: alarm_id
  *         description: Unique identifier of the alarm (alarm name)
