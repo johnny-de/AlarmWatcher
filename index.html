@@ -3,67 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Texting Test Page</title>
+    <title>AlarmWatcher</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-        .container {
-            max-width: 800px;
-            margin: 50px auto;
-            background-color: white;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 20px;
         }
         h1 {
-            color: #333;
+            text-align: center;
         }
-        p {
-            line-height: 1.6;
-            color: #555;
-        }
-        form {
+        table {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 20px;
         }
-        input[type="text"], textarea {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+        table, th, td {
+            border: 1px solid black;
         }
-        input[type="submit"] {
-            background-color: #28a745;
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: white;
+        }
+        button {
+            padding: 5px 10px;
             color: white;
-            padding: 10px 20px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin-right: 5px;
         }
-        input[type="submit"]:hover {
-            background-color: #218838;
+        .ack-button {
+            background-color: #007bff;
+        }
+        .del-button {
+            background-color: red;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Test Page for Texting</h1>
-        <p>This is a simple HTML page to be used for testing purposes. You can enter any text in the input fields below and submit it.</p>
-        
-        <form action="#" method="POST">
-            <label for="text-input">Enter some text:</label>
-            <input type="text" id="text-input" name="text-input" placeholder="Type something here..." required>
+    <h1>AlarmWatcher</h1>
 
-            <label for="textarea-input">Enter a longer text:</label>
-            <textarea id="textarea-input" name="textarea-input" rows="5" placeholder="Type longer text here..."></textarea>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>State</th>
+                <th>Class</th>
+                <th>Raised</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="alarmTableBody">
+            <!-- Alarms will be injected here -->
+        </tbody>
+    </table>
 
-            <input type="submit" value="Submit">
-        </form>
-    </div>
+    <script>
+        // API endpoint for alarms
+        const apiUrl = '/api/getAlarms';
+
+        // Function to fetch alarms from API
+        async function fetchAlarms() {
+            try {
+                const response = await fetch(apiUrl);
+                const alarms = await response.json();
+                displayAlarms(alarms);
+            } catch (error) {
+                console.error('Error fetching alarms:', error);
+            }
+        }
+
+        // Function to convert Unix timestamp to a readable date format
+        function formatUnixTimestamp(unixTimestamp) {
+            const date = new Date(unixTimestamp * 1000); // Convert Unix timestamp (in seconds) to milliseconds
+            return date.toLocaleString(); // Convert to human-readable format
+        }
+
+        // Function to acknowledge the alarm
+        async function acknowledgeAlarm(alarm_id) {
+            try {
+                const response = await fetch(`/api/ackAlarm?alarm_id=${alarm_id}`, { method: 'GET' });
+                if (response.ok) {
+                    fetchAlarms(); // Refresh the table after acknowledging
+                } else {
+                    alert(`Failed to acknowledge alarm ${alarm_id}.`);
+                }
+            } catch (error) {
+                console.error('Error acknowledging alarm:', error);
+            }
+        }
+
+        // Function to delete the alarm
+        async function deleteAlarm(alarm_id) {
+            try {
+                const response = await fetch(`/api/clearAlarm?alarm_id=${alarm_id}`, { method: 'GET' });
+                if (response.ok) {
+                    fetchAlarms(); // Refresh the table after deleting
+                } else {
+                    alert(`Failed to delete alarm ${alarm_id}.`);
+                }
+            } catch (error) {
+                console.error('Error deleting alarm:', error);
+            }
+        }
+
+        // Function to display alarms in the table
+        function displayAlarms(alarms) {
+            const alarmTableBody = document.getElementById('alarmTableBody');
+            alarmTableBody.innerHTML = ''; // Clear existing rows
+
+            alarms.forEach(alarm => {
+                const row = document.createElement('tr');
+
+                const idCell = document.createElement('td');
+                idCell.textContent = alarm.alarm_id;
+                row.appendChild(idCell);
+
+                const stateCell = document.createElement('td');
+                stateCell.textContent = alarm.alarm_state;
+                row.appendChild(stateCell);
+
+                const classCell = document.createElement('td');
+                classCell.textContent = alarm.alarm_class;
+                row.appendChild(classCell);
+
+                const timeCell = document.createElement('td');
+                timeCell.textContent = formatUnixTimestamp(alarm.raised_time);
+                row.appendChild(timeCell);
+
+                const actionCell = document.createElement('td');
+
+                // Create the Ack button if the alarm requires acknowledgment
+                if (alarm.require_ack === 1 && alarm.ack_time === null) {
+                    const ackButton = document.createElement('button');
+                    ackButton.textContent = 'Ack';
+                    ackButton.classList.add('ack-button');
+                    ackButton.onclick = () => acknowledgeAlarm(alarm.alarm_id);
+                    actionCell.appendChild(ackButton);
+                }
+
+                // Add the Delete button for all rows
+                const delButton = document.createElement('button');
+                delButton.textContent = 'Del';
+                delButton.classList.add('del-button');
+                delButton.onclick = () => deleteAlarm(alarm.alarm_id);
+                actionCell.appendChild(delButton);
+
+                row.appendChild(actionCell);
+                alarmTableBody.appendChild(row);
+            });
+        }
+
+        // Fetch alarms every 2 seconds
+        setInterval(fetchAlarms, 2000);
+    </script>
 
 </body>
 </html>

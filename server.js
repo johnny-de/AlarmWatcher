@@ -39,7 +39,7 @@ const db = new sqlite3.Database('./alarms.db', (err) => {
         db.run(`CREATE TABLE IF NOT EXISTS alarms (
             alarm_id TEXT PRIMARY KEY NOT NULL, -- Unique identifier for the alarm (string)
             alarm_class INTEGER NOT NULL,       -- Class of the alarm (integer: 1, 2, or 3)
-            alarm_status TEXT NOT NULL,         -- Status of the alarm (string)
+            alarm_state TEXT NOT NULL,          -- State of the alarm (string)
             raised_time INTEGER NOT NULL,       -- Timestamp when the alarm was raised (integer, unix timestamp)
             require_ack BOOLEAN NOT NULL,       -- Whether the alarm needs to be acknowledged (boolean)
             ack_time INTEGER,                   -- Time when the alarm was acknowledged (integer, unix timestamp)
@@ -54,7 +54,7 @@ const db = new sqlite3.Database('./alarms.db', (err) => {
     }
 });
 
-// Website
+// Frontend
 app.get('/', (req, res) => {
     // Return index.html
     return res.status(200).sendFile(__dirname + '/index.html');
@@ -95,8 +95,8 @@ app.get('/api/serverTime', (req, res) => {
  *         in: query
  *         required: true
  *         type: integer
- *       - name: alarm_status
- *         description: Status of the alarm that is displayed (e.g. active, fault, error, open)
+ *       - name: alarm_state
+ *         description: State of the alarm that is displayed (e.g. active, fault, error, open)
  *         in: query
  *         required: false
  *         type: string
@@ -122,7 +122,7 @@ app.get('/api/serverTime', (req, res) => {
 app.get('/api/raiseAlarm', (req, res) => {
     alarm_id = req.query.alarm_id;
     alarm_class = Number(req.query.alarm_class);
-    alarm_status = req.query.alarm_status || "on";          // Default to "on" if not provided
+    alarm_state = req.query.alarm_state || "on";          // Default to "on" if not provided
     raised_time = Number(Math.floor(Date.now() / 1000));    // Current UNIX timestamp in seconds
     require_ack = ((req.query.req_ack ||false) == "true");  // Default to false if not provided
     delete_time = Number(req.query.duration) || null;       // Default to null if not provided
@@ -134,9 +134,9 @@ app.get('/api/raiseAlarm', (req, res) => {
 
     // Add the alarm to the table
     db.run(
-        `INSERT OR REPLACE INTO alarms (alarm_id, alarm_class, alarm_status, raised_time, require_ack, delete_time) 
+        `INSERT OR REPLACE INTO alarms (alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time) 
         VALUES (?, ?, ?, ?, ?, ?)`,
-        [alarm_id, alarm_class, alarm_status, raised_time, require_ack, delete_time],
+        [alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time],
         function(err) {
             if (err) {
                 return res.status(400).send("Error inserting alarm: " + err.message);
