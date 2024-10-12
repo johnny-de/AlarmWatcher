@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>AlarmWatcher</title>
     <link rel="stylesheet" href="/styles.css"> <!-- served from /public/styles.css -->
 </head>
@@ -52,30 +52,34 @@
     <script>
         // API endpoint for alarms
         const apiUrl = '/api/getAlarms';
-
+    
         // Object to track active filters
         const activeFilters = {
             alarms: false,
             warnings: false,
             events: false
         };
-
+    
         // Function to fetch alarms from API
         async function fetchAlarms() {
             try {
                 const response = await fetch(apiUrl);
                 const alarms = await response.json();
                 displayAlarms(alarms);
+                showNotifications(alarms);
             } catch (error) {
                 console.error('Error fetching alarms:', error);
             }
         }
 
+        // Define variables
+        let selectedAlarmId = null;
+    
         // Function to display alarms in the table
         function displayAlarms(alarms) {
             const alarmTableBody = document.getElementById('alarmTableBody');
             alarmTableBody.innerHTML = ''; // Clear existing rows
-
+    
             alarms.forEach(alarm => {
                 // Check if the alarm should be displayed based on active filters
                 if ((activeFilters.alarms && alarm.alarm_class === 1) ||
@@ -83,9 +87,9 @@
                     (activeFilters.events && alarm.alarm_class === 3)) {
                     return; // Skip this alarm
                 }
-
+    
                 const row = document.createElement('tr');
-                
+    
                 // Add a class to the row based on alarm class
                 switch (alarm.alarm_class) {
                     case 1:
@@ -100,50 +104,76 @@
                     default:
                         row.classList.add('alarm-class-default'); // Optional: for any other class
                 }
-
+    
                 const idCell = document.createElement('td');
                 idCell.textContent = alarm.alarm_id;
                 row.appendChild(idCell);
-
+    
                 const stateCell = document.createElement('td');
                 stateCell.textContent = alarm.alarm_state;
                 row.appendChild(stateCell);
-
+    
                 const timeCell = document.createElement('td');
                 timeCell.textContent = formatUnixTimestamp(alarm.raised_time);
                 row.appendChild(timeCell);
-
+    
                 const actionCell = document.createElement('td');
-
+    
                 // Create the Ack button if the alarm requires acknowledgment
                 if (alarm.require_ack === 1 && alarm.ack_time === null) {
                     const ackButton = document.createElement('button');
-                    ackButton.textContent = 'Ack';
+                    ackButton.textContent = '✔';
                     ackButton.classList.add('ack-button');
                     ackButton.onclick = () => acknowledgeAlarm(alarm.alarm_id);
                     actionCell.appendChild(ackButton);
                 }
-
+    
                 // Add the Delete button for all rows
                 const delButton = document.createElement('button');
-                delButton.textContent = 'Del';
+                delButton.textContent = '✖';
                 delButton.classList.add('del-button');
                 delButton.onclick = () => deleteAlarm(alarm.alarm_id);
                 actionCell.appendChild(delButton);
-
+    
                 row.appendChild(actionCell);
                 alarmTableBody.appendChild(row);
+    
+                // Set a custom attribute to the row to identify the alarm
+                row.setAttribute('data-alarm-id', alarm.alarm_id);
+    
+                // Add click event to the row
+                row.addEventListener('click', () => {
+                    // Clear previous selection
+                    if (selectedAlarmId) {
+                        const previousRow = alarmTableBody.querySelector(`tr[data-alarm-id="${selectedAlarmId}"]`);
+                        if (previousRow) {
+                            previousRow.classList.remove('selected');
+                        }
+                    }
+    
+                    // Highlight the current row and update selected alarm ID
+                    row.classList.add('selected');
+                    selectedAlarmId = alarm.alarm_id; // Store the selected alarm ID
+                });
             });
+    
+            // Reapply the selected state if there's a selected alarm
+            if (selectedAlarmId) {
+                const selectedRow = alarmTableBody.querySelector(`tr[data-alarm-id="${selectedAlarmId}"]`);
+                if (selectedRow) {
+                    selectedRow.classList.add('selected');
+                }
+            }
         }
-
+    
         // Toggle filter buttons
         const filterButtons = document.querySelectorAll('.filter-buttons button');
-
+    
         filterButtons.forEach(button => {
             button.addEventListener('click', () => {
                 // Toggle the 'active' class on the clicked button
                 button.classList.toggle('active');
-                
+    
                 // Update the activeFilters object based on button state
                 if (button.id === 'filter-alarms') {
                     activeFilters.alarms = !activeFilters.alarms;
@@ -152,18 +182,18 @@
                 } else if (button.id === 'filter-events') {
                     activeFilters.events = !activeFilters.events;
                 }
-
+    
                 // Re-fetch alarms to apply filters
                 fetchAlarms();
             });
         });
-
+    
         // Function to convert Unix timestamp to a readable date format
         function formatUnixTimestamp(unixTimestamp) {
             const date = new Date(unixTimestamp * 1000); // Convert Unix timestamp (in seconds) to milliseconds
             return date.toLocaleString(); // Convert to human-readable format
         }
-
+    
         // Function to acknowledge the alarm
         async function acknowledgeAlarm(alarm_id) {
             try {
@@ -177,7 +207,7 @@
                 console.error('Error acknowledging alarm:', error);
             }
         }
-
+    
         // Function to delete the alarm
         async function deleteAlarm(alarm_id) {
             try {
@@ -192,36 +222,85 @@
             }
         }
 
+        let currentNotification = null;
+        let lastAlarmCount = 0;
+        let lastWarningCount = 0;
+
+        // Request notification permission
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    // Permission granted, you can now show notifications
+                }
+            });
+        }
+
+        //
+
+        // Function to show notifications
+        function showNotifications(alarms) {
+            const alarmCount = alarms.filter(alarm => alarm.alarm_class === 1).length;
+            const warningCount = alarms.filter(alarm => alarm.alarm_class === 2).length;
+
+            // Only show notification if the counts have increased
+            if (alarmCount > lastAlarmCount || warningCount > lastWarningCount) {
+                const title = 'AlarmWatcher - New Alarms!';
+                const options = {
+                    body: `Alarms: ${alarmCount}\nWarnings: ${warningCount}`,
+                    requireInteraction: true
+                };
+
+                // Delete old notification if available
+                if (currentNotification) {
+                    currentNotification.close();
+                }
+
+                // Send notification
+                currentNotification = new Notification(title, options);
+                
+                // Update the last known counts
+                lastAlarmCount = alarmCount;
+                lastWarningCount = warningCount;
+            }
+            else if (alarmCount < lastAlarmCount || warningCount < lastWarningCount){
+                // Set the last known counts
+                lastAlarmCount = alarmCount;
+                lastWarningCount = warningCount;
+            }
+        }
+
+    
         // Scroll-related functionality
         const tableWrapper = document.querySelector('.table-wrapper');
         let scrollTimeout;
-
+    
         // Function to scroll to top
         const scrollToTop = () => {
             tableWrapper.scrollTo({ top: 0, behavior: 'smooth' });
         };
-
+    
         // Event handler for scroll event
         const onScroll = () => {
             // Clear the previous timeout if user interacts with the table
             clearTimeout(scrollTimeout);
-
+    
             // Set a new timeout to reset scroll after 10 seconds
             scrollTimeout = setTimeout(scrollToTop, 60000);
         };
-
+    
         // Attach scroll event listener to table wrapper
         tableWrapper.addEventListener('scroll', onScroll);
-
+    
         // Initially scroll to the top when the page loads
         scrollToTop();
-
+    
         // Fetch alarms immediately on page load
         fetchAlarms();
-
+    
         // Fetch alarms every 2 seconds
         setInterval(fetchAlarms, 2000);
     </script>
+   
 
 </body>
 </html>
