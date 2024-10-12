@@ -3,9 +3,13 @@ const express = require('express');
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUI = require('swagger-ui-express');
 const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
 
 // Create express application
-const app = express ();
+const app = express();
+
+// Serve static files from public folder (CSS, JS, images, etc.)
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Create swagger options
 const swaggerOptions = {
@@ -70,7 +74,7 @@ app.get('/', (req, res) => {
  *     description: Get the current server time as a UNIX timestamp.
  *     responses:
  *       200:
- *         description: Server time as a UNIX timestamp (e.g., 1727206611)
+ *         description: Server time as a UNIX timestamp (e.g. 1727206611)
  */
 app.get('/api/serverTime', (req, res) => {
     // Return current UNIX timestamp in seconds
@@ -122,7 +126,7 @@ app.get('/api/serverTime', (req, res) => {
 app.get('/api/raiseAlarm', (req, res) => {
     alarm_id = req.query.alarm_id;
     alarm_class = Number(req.query.alarm_class);
-    alarm_state = req.query.alarm_state || "on";          // Default to "on" if not provided
+    alarm_state = req.query.alarm_state || "on";            // Default to "on" if not provided
     raised_time = Number(Math.floor(Date.now() / 1000));    // Current UNIX timestamp in seconds
     require_ack = ((req.query.req_ack ||false) == "true");  // Default to false if not provided
     delete_time = Number(req.query.duration) || null;       // Default to null if not provided
@@ -246,7 +250,7 @@ app.get('/api/clearAlarm', (req, res) => {
  *   get:
  *     tags:
  *       - Alarm list
- *     description: Get a list of alarms. Either all or filtered according to the following parameters.
+ *     description: Get a list of alarms sorted by the time the alarms where raised (most recent on top). Either all or filtered according to the following parameters.
  *     parameters:
  *       - name: alarm_id
  *         description: Returns the alarm uniquely found with the unique identifier of the alarm (alarm name)
@@ -301,6 +305,9 @@ app.get('/api/getAlarms', (req, res) => {
     if (conditions.length > 0) {
         sql += ` WHERE ` + conditions.join(' AND ');
     }
+
+    // Add ORDER BY clause to sort by raised_time in descending order (newest alarms first)
+    sql += ` ORDER BY raised_time DESC`;
 
     // Execute the SQL query
     db.all(sql, params, (err, rows) => {

@@ -4,71 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AlarmWatcher</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        h1 {
-            text-align: center;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        table, th, td {
-            border: 1px solid black;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: white;
-        }
-        button {
-            padding: 5px 10px;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-right: 5px;
-        }
-        .ack-button {
-            background-color: #007bff;
-        }
-        .del-button {
-            background-color: red;
-        }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-    </style>
+    <link rel="stylesheet" href="/styles.css"> <!-- served from /public/styles.css -->
 </head>
 <body>
 
-    <h1>AlarmWatcher</h1>
+    <!-- Header with logo and navigation links -->
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <img src="/logo.png" alt="AlarmWatcher">
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="/api-docs" target="_blank">API Docs</a></li>
+                    <li><a href="https://github.com/johnny-de/alarmwatcher" target="_blank">GitHub</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
 
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>State</th>
-                <th>Class</th>
-                <th>Raised</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody id="alarmTableBody">
-            <!-- Alarms will be injected here -->
-        </tbody>
-    </table>
+    <!-- Buttons for filtering -->
+    <div class="filter-buttons">
+        <button id="filter-alarms">Alarms</button>
+        <button id="filter-warnings">Warnings</button>
+        <button id="filter-events">Events</button>
+    </div>
+
+    <!-- Table with Alarms -->
+    <div class="table-container">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>State</th>
+                        <th>Time</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="alarmTableBody">
+                    <!-- Alarms will be injected here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     <script>
         // API endpoint for alarms
         const apiUrl = '/api/getAlarms';
+
+        // Object to track active filters
+        const activeFilters = {
+            alarms: false,
+            warnings: false,
+            events: false
+        };
 
         // Function to fetch alarms from API
         async function fetchAlarms() {
@@ -80,6 +70,93 @@
                 console.error('Error fetching alarms:', error);
             }
         }
+
+        // Function to display alarms in the table
+        function displayAlarms(alarms) {
+            const alarmTableBody = document.getElementById('alarmTableBody');
+            alarmTableBody.innerHTML = ''; // Clear existing rows
+
+            alarms.forEach(alarm => {
+                // Check if the alarm should be displayed based on active filters
+                if ((activeFilters.alarms && alarm.alarm_class === 1) ||
+                    (activeFilters.warnings && alarm.alarm_class === 2) ||
+                    (activeFilters.events && alarm.alarm_class === 3)) {
+                    return; // Skip this alarm
+                }
+
+                const row = document.createElement('tr');
+                
+                // Add a class to the row based on alarm class
+                switch (alarm.alarm_class) {
+                    case 1:
+                        row.classList.add('alarm-class-1');
+                        break;
+                    case 2:
+                        row.classList.add('alarm-class-2');
+                        break;
+                    case 3:
+                        row.classList.add('alarm-class-3');
+                        break;
+                    default:
+                        row.classList.add('alarm-class-default'); // Optional: for any other class
+                }
+
+                const idCell = document.createElement('td');
+                idCell.textContent = alarm.alarm_id;
+                row.appendChild(idCell);
+
+                const stateCell = document.createElement('td');
+                stateCell.textContent = alarm.alarm_state;
+                row.appendChild(stateCell);
+
+                const timeCell = document.createElement('td');
+                timeCell.textContent = formatUnixTimestamp(alarm.raised_time);
+                row.appendChild(timeCell);
+
+                const actionCell = document.createElement('td');
+
+                // Create the Ack button if the alarm requires acknowledgment
+                if (alarm.require_ack === 1 && alarm.ack_time === null) {
+                    const ackButton = document.createElement('button');
+                    ackButton.textContent = 'Ack';
+                    ackButton.classList.add('ack-button');
+                    ackButton.onclick = () => acknowledgeAlarm(alarm.alarm_id);
+                    actionCell.appendChild(ackButton);
+                }
+
+                // Add the Delete button for all rows
+                const delButton = document.createElement('button');
+                delButton.textContent = 'Del';
+                delButton.classList.add('del-button');
+                delButton.onclick = () => deleteAlarm(alarm.alarm_id);
+                actionCell.appendChild(delButton);
+
+                row.appendChild(actionCell);
+                alarmTableBody.appendChild(row);
+            });
+        }
+
+        // Toggle filter buttons
+        const filterButtons = document.querySelectorAll('.filter-buttons button');
+
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Toggle the 'active' class on the clicked button
+                button.classList.toggle('active');
+                
+                // Update the activeFilters object based on button state
+                if (button.id === 'filter-alarms') {
+                    activeFilters.alarms = !activeFilters.alarms;
+                } else if (button.id === 'filter-warnings') {
+                    activeFilters.warnings = !activeFilters.warnings;
+                } else if (button.id === 'filter-events') {
+                    activeFilters.events = !activeFilters.events;
+                }
+
+                // Re-fetch alarms to apply filters
+                fetchAlarms();
+            });
+        });
 
         // Function to convert Unix timestamp to a readable date format
         function formatUnixTimestamp(unixTimestamp) {
@@ -115,52 +192,32 @@
             }
         }
 
-        // Function to display alarms in the table
-        function displayAlarms(alarms) {
-            const alarmTableBody = document.getElementById('alarmTableBody');
-            alarmTableBody.innerHTML = ''; // Clear existing rows
+        // Scroll-related functionality
+        const tableWrapper = document.querySelector('.table-wrapper');
+        let scrollTimeout;
 
-            alarms.forEach(alarm => {
-                const row = document.createElement('tr');
+        // Function to scroll to top
+        const scrollToTop = () => {
+            tableWrapper.scrollTo({ top: 0, behavior: 'smooth' });
+        };
 
-                const idCell = document.createElement('td');
-                idCell.textContent = alarm.alarm_id;
-                row.appendChild(idCell);
+        // Event handler for scroll event
+        const onScroll = () => {
+            // Clear the previous timeout if user interacts with the table
+            clearTimeout(scrollTimeout);
 
-                const stateCell = document.createElement('td');
-                stateCell.textContent = alarm.alarm_state;
-                row.appendChild(stateCell);
+            // Set a new timeout to reset scroll after 10 seconds
+            scrollTimeout = setTimeout(scrollToTop, 60000);
+        };
 
-                const classCell = document.createElement('td');
-                classCell.textContent = alarm.alarm_class;
-                row.appendChild(classCell);
+        // Attach scroll event listener to table wrapper
+        tableWrapper.addEventListener('scroll', onScroll);
 
-                const timeCell = document.createElement('td');
-                timeCell.textContent = formatUnixTimestamp(alarm.raised_time);
-                row.appendChild(timeCell);
+        // Initially scroll to the top when the page loads
+        scrollToTop();
 
-                const actionCell = document.createElement('td');
-
-                // Create the Ack button if the alarm requires acknowledgment
-                if (alarm.require_ack === 1 && alarm.ack_time === null) {
-                    const ackButton = document.createElement('button');
-                    ackButton.textContent = 'Ack';
-                    ackButton.classList.add('ack-button');
-                    ackButton.onclick = () => acknowledgeAlarm(alarm.alarm_id);
-                    actionCell.appendChild(ackButton);
-                }
-
-                // Add the Delete button for all rows
-                const delButton = document.createElement('button');
-                delButton.textContent = 'Del';
-                delButton.classList.add('del-button');
-                delButton.onclick = () => deleteAlarm(alarm.alarm_id);
-                actionCell.appendChild(delButton);
-
-                row.appendChild(actionCell);
-                alarmTableBody.appendChild(row);
-            });
-        }
+        // Fetch alarms immediately on page load
+        fetchAlarms();
 
         // Fetch alarms every 2 seconds
         setInterval(fetchAlarms, 2000);
