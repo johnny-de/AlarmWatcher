@@ -11,8 +11,8 @@ AlarmWatcher is a versatile, self-hosted and intuitive to use alarm management s
 <a target="_blank" href="https://github.com/johnny-de/alarmwatcher"><img src="https://img.shields.io/github/stars/johnny-de/alarmwatcher?style=flat" /></a> 
 <a target="_blank" href="https://github.com/johnny-de/alarmwatcher"><img src="https://img.shields.io/github/v/release/johnny-de/alarmwatcher" /></a> 
 <a target="_blank" href="https://github.com/johnny-de/alarmwatcher"><img src="https://img.shields.io/github/last-commit/johnny-de/alarmwatcher" /></a>
-<a target="_blank" href="https://hub.docker.com/r/johnny-de/alarmwatcher"><img src="https://img.shields.io/docker/pulls/johnnyde/alarmwatcher" /></a> 
-<a target="_blank" href="https://hub.docker.com/r/johnny-de/alarmwatcher"><img src="https://img.shields.io/docker/v/johnnyde/alarmwatcher/latest?label=docker%20image%20ver" /></a>
+<a target="_blank" href="https://hub.docker.com/r/johnnyde/alarmwatcher"><img src="https://img.shields.io/docker/pulls/johnnyde/alarmwatcher" /></a> 
+<a target="_blank" href="https://hub.docker.com/r/johnnyde/alarmwatcher"><img src="https://img.shields.io/docker/v/johnnyde/alarmwatcher/latest?label=docker%20image%20ver" /></a>
 
 ## Key Features
 
