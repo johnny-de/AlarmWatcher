@@ -54,7 +54,7 @@ Below is an outline of the planned milestones for version 1.0.0 and beyond.
 
 The first major release (v1.0.0) will focus on delivering a fully functioning backend and a user-friendly frontend, along with essential features for alarm management.
 - **Backend:** Complete and thoroughly test the backend for alarm management, handling alarm states, acknowledgments, and filtering. Ensure stability and reliability for all server-side operations.
-- **Frontend:** Implement a fully functional, web-based frontend for monitoring and managing alarms. Integrate basic filtering capabilities, allowing users to filter alarms based on alarm classes. Include support for Dark Mode, enabling users to switch between a light and dark theme. Additionally, provide notification support for pushing browser notifications to the underlying OS.
+- **Frontend:** Implement a fully functional, web-based frontend for monitoring and managing alarms. Integrate basic filtering capabilities, allowing users to filter alarms based on alarm classes. Include support for dark mode, enabling users to switch between a light and dark theme. Additionally, provide notification support for pushing browser notifications to the underlying OS.
 - **Docker Image:** Create and publish a Docker image on DockerHub to simplify deployment and installation.
 - **Wiki Documentation:** Prepare and publish a detailed Wiki to guide users on how to install, configure, and use AlarmWatcher.
 
