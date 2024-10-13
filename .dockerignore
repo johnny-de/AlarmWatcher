@@ -1,0 +1,27 @@
+# Ignore node_modules since we install them inside the container
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Ignore local environment files
+.env
+
+# Ignore logs
+*.log
+
+# Ignore any compiled output or temporary files
+dist
+build
+.tmp
+
+# Ignore Dockerfile and docker-compose files if they aren't needed inside the container
+Dockerfile
+docker-compose*
+
+# Ignore IDE files
+.vscode/
+.idea/
+
+# Ignore git files
+.git
+.gitignore

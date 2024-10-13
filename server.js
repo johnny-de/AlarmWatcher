@@ -322,7 +322,7 @@ app.get('/api/getAlarms', (req, res) => {
 
 
 // Start express application
-app.listen(80, () => console.log("Listening on port 80."));
+app.listen(3777, () => console.log("Listening on port 3777."));
 
 // Function to delete alarms with past delete_time
 function deleteExpiredAlarms() {
