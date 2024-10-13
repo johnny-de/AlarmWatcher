@@ -4,7 +4,7 @@
     </a>
 </div>
 
-<br><br>
+<br>
 
 AlarmWatcher is a versatile, self-hosted and intuitive to use alarm management system. It is designed to serve as the central hub for handling alarms across various applications and systems. Whether you're managing alarms for smart home, industrial equipment, or other interconnected devices, AlarmWatcher simplifies alarm handling.
 
