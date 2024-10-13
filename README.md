@@ -44,7 +44,7 @@ This feature is especially useful for high-priority alarms, ensuring that critic
 
 ## Getting Started
 
-To learn how to install, configure, and run AlarmWatcher, please visit the detailed guide in our [Wiki](https://github.com/johnny-de/alarmwatcher/wiki).
+To learn how to install, configure, and run AlarmWatcher, please visit the detailed guide in the [Wiki](https://github.com/johnny-de/alarmwatcher/wiki).
 
 ## Milestones
 
