@@ -1,8 +1,8 @@
-<div align="center" width="100%">
-    <img src="./public/logo.svg" width="350" alt="" />
+<div align="left" width="100%">
+    <a href="https://github.com/johnny-de/alarmwatcher">
+        <img src="./public/logo.svg" width="350" alt="AlarmWatcher" />
+    </a>
 </div>
-
-# AlarmWatcher
 
 AlarmWatcher is a versatile, self-hosted and intuitive to use alarm management system. It is designed to serve as the central hub for handling alarms across various applications and systems. Whether you're managing alarms for smart home, industrial equipment, or other interconnected devices, AlarmWatcher simplifies alarm handling.
 
