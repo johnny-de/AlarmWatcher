@@ -8,12 +8,11 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
 </head>
 <body>
-
     <!-- Header with logo and navigation links -->
     <header>
         <div class="header-container">
             <div class="logo">
-                <img src="/logo_black.svg" alt="AlarmWatcher">
+                <img src="/logo.svg" alt="AlarmWatcher">
             </div>
             <nav>
                 <ul>
@@ -119,23 +118,40 @@
                 row.appendChild(timeCell);
     
                 const actionCell = document.createElement('td');
-    
+                
+                // Create a container for the buttons
+                const buttonContainer = document.createElement('div');
+                buttonContainer.style.display = 'flex'; // Use flexbox to align buttons
+
                 // Create the Ack button if the alarm requires acknowledgment
                 if (alarm.require_ack === 1 && alarm.ack_time === null) {
                     const ackButton = document.createElement('button');
-                    ackButton.textContent = '✔';
                     ackButton.classList.add('ack-button');
                     ackButton.onclick = () => acknowledgeAlarm(alarm.alarm_id);
-                    actionCell.appendChild(ackButton);
+
+                    // Add the Heroicons SVG instead of text
+                    ackButton.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="svg-icon">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                        </svg>
+                    `;
+                    buttonContainer.appendChild(ackButton); // Add Ack button to the container
                 }
     
                 // Add the Delete button for all rows
                 const delButton = document.createElement('button');
-                delButton.textContent = '✖';
                 delButton.classList.add('del-button');
                 delButton.onclick = () => deleteAlarm(alarm.alarm_id);
-                actionCell.appendChild(delButton);
-    
+
+                // Add the Heroicons SVG instead of text
+                delButton.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="svg-icon">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                `;
+                buttonContainer.appendChild(delButton); // Add Delete button to the container
+                
+                actionCell.appendChild(buttonContainer); // Append the button container to the action cell
                 row.appendChild(actionCell);
                 alarmTableBody.appendChild(row);
     
@@ -236,8 +252,6 @@
             });
         }
 
-        //
-
         // Function to show notifications
         function showNotifications(alarms) {
             const alarmCount = alarms.filter(alarm => alarm.alarm_class === 1).length;
@@ -301,7 +315,5 @@
         // Fetch alarms every 2 seconds
         setInterval(fetchAlarms, 2000);
     </script>
-   
-
 </body>
 </html>

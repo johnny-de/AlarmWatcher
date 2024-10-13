@@ -1,16 +1,60 @@
+/* +++ Colors +++ */
+:root {
+    --color_background: white;
+    --color_header: white;
+    --color_table: white;
+    --shadow: 0 0 15px 5px rgb(222, 222, 222);
+    --color_text: black;
+    --color_button_text: white;
+    --color_red: rgb(239, 68, 68);
+    --color_light_red: rgb(255, 206, 206);
+    --color_orange: rgb(249, 115, 22);
+    --color_light_orange: rgb(255, 228, 194);
+    --color_gray: rgb(107, 114, 128);
+    --color_midle_gray: rgb(128, 128, 128);
+    --color_light_gray: rgb(239, 239, 239);
+    --color_blue: rgb(68, 145, 239);
+}
+
+/* Darkmode */
+html {
+    color-scheme: dark light;
+}
+
+@media (prefers-color-scheme: dark){
+    :root {
+        --color_background: rgb(33, 33, 33);
+        --color_header: rgb(23, 23, 23);
+        --color_table: rgb(13, 13, 13);
+        --shadow: none;
+        --color_text: rgb(236, 236, 236);
+        --color_button_text: rgb(236, 236, 236);
+        --color_red: rgb(207, 41, 41);
+        --color_light_red: rgb(207, 41, 41);
+        --color_orange: rgb(227, 115, 35);
+        --color_light_orange: rgb(227, 115, 35);
+        --color_gray: rgb(47, 47, 47);
+        --color_midle_gray: rgb(33, 33, 33);
+        --color_light_gray: rgb(47, 47, 47);
+        --color_blue: rgb(47, 115, 199);
+    }
+}
+
 /* +++ General +++ */
 
 body {
     font-family: sans-serif;
     text-decoration: none;
-    color: black;
+    color: var(--color_text);
     font-size: 16px;
+    margin: 0;
+    background-color: var(--color_background);
 }
 
 /* Button design */
 button {
     padding: 5px 10px;
-    color: white;
+    color: var(--color_button_text);
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -18,18 +62,17 @@ button {
     font-size: 16px;
 }
 
-
 /* +++ Header +++ */
 
 header a {
-    color: black;
+    color: var(--color_text);
     text-decoration: none;
 }
 
 header {
-    border-bottom: 1px solid rgb(222, 222, 222);
     min-height: 60px;
-    padding: 0px 20px 0px 20px;
+    box-shadow: var(--shadow);
+    background-color: var(--color_header);
 }
 
 .header-container {
@@ -37,6 +80,7 @@ header {
     justify-content: space-between;
     align-items: center;
     height: 100%;
+    padding: 5px 25px 5px 25px;
 }
 
 .logo img {
@@ -71,19 +115,19 @@ nav ul li {
     cursor: pointer;
     border: none;
     border-radius: 5px;
-    color: white;
+    color: var(--color_button_text);
 }
 
 #filter-alarms {
-    background-color: rgb(239, 68, 68);
+    background-color: var(--color_red);
 }
 
 #filter-warnings {
-    background-color: rgb(249, 115, 22);
+    background-color: var(--color_orange);
 }
 
 #filter-events {
-    background-color: rgb(107, 114, 128);
+    background-color: var(--color_gray);
 }
 
 .filter-buttons button:hover {
@@ -102,8 +146,9 @@ nav ul li {
 
 .table-container {
     border-radius: 10px;
-    box-shadow: 0 0 15px 5px rgb(222, 222, 222);
-    margin: 10px 20px;
+    box-shadow: var(--shadow);
+    background-color: var(--color_table);
+    margin: 10px 25px;
     max-height: calc(100vh - 170px);
     overflow: hidden;
     padding: 5px;
@@ -111,7 +156,6 @@ nav ul li {
 
 /* This wrapper will handle scrolling */
 .table-wrapper {
-    background-color: white;
     max-height: calc(100vh - 170px);
     overflow-y: auto;
 }
@@ -123,7 +167,7 @@ table {
 }
 
 tr {
-    border-bottom: 2px solid white;
+    border-bottom: 2px solid var(--color_table);
 }
 
 th, td {
@@ -134,20 +178,20 @@ th, td {
 th {
     position: sticky;
     top: 0;
-    background-color: white;
+    background-color: var(--color_table);
     z-index: 10;
     height: 30px;
 }
 
 /* Color classes for different alarm types */
 .alarm-class-1 {
-    background-color: rgb(255, 206, 206);
+    background-color: var(--color_light_red);
 }
 .alarm-class-2 {
-    background-color: rgb(255, 228, 194);
+    background-color: var(--color_light_orange);
 }
 .alarm-class-3 {
-    background-color: rgb(239, 239, 239);
+    background-color: var(--color_light_gray);
 }
 
 /* Darken alarm when hovering over it */
@@ -155,16 +199,32 @@ tbody tr:hover {
     filter: brightness(0.8);
 }
 
-/* Darken alarm when klicked over it */
+/* Darken alarm when clicked over it */
 .selected {
     filter: brightness(0.8);
 }
 
-/* Alarm button design*/
-.ack-button {
-    background-color: rgb(68, 145, 239);
+/* Style for the SVG icon inside the delete button */
+.svg-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    color: var(--color_button_text);
 }
 
 .del-button {
-    background-color: rgb(239, 68, 68);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 5px;
+    background-color: var(--color_midle_gray);
+}
+
+.ack-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 5px;
+    background-color: var(--color_blue);
 }
