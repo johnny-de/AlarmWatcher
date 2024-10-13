@@ -1,5 +1,5 @@
 <div align="center" width="100%">
-    <img src="./public/logo.svg" width="128" alt="" />
+    <img src="./public/logo.svg" width="350" alt="" />
 </div>
 
 # AlarmWatcher
