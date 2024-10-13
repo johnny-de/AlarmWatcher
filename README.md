@@ -1,4 +1,4 @@
-<div align="left" width="100%">
+<div align="center" width="100%">
     <a href="https://github.com/johnny-de/alarmwatcher">
         <img src="./public/logo.svg" width="350" alt="AlarmWatcher" />
     </a>
