@@ -193,6 +193,10 @@ th {
 .alarm-class-3 {
     background-color: var(--color_light_gray);
 }
+.alarm-class-default {
+    background-color: var(--color_table);
+}
+
 
 /* Darken alarm when hovering over it */
 tbody tr:hover {
