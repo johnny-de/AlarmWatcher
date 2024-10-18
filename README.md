@@ -46,17 +46,21 @@ This feature is especially useful for high-priority alarms, ensuring that critic
 
 To learn how to install, configure, and run AlarmWatcher, please visit the detailed guide in the [Wiki](https://github.com/johnny-de/alarmwatcher/wiki).
 
-## Milestones
+## Published versions
 
-Below is an outline of the planned milestones for version 1.0.0 and beyond.
+This section outlines the major published versions of AlarmWatcher, detailing their key features and enhancements.
 
 ### Version 1.0.0
 
-The first major release (v1.0.0) will focus on delivering a fully functioning backend and a user-friendly frontend, along with essential features for alarm management.
-- **Backend:** Complete and thoroughly test the backend for alarm management, handling alarm states, acknowledgments, and filtering. Ensure stability and reliability for all server-side operations.
-- **Frontend:** Implement a fully functional, web-based frontend for monitoring and managing alarms. Integrate basic filtering capabilities, allowing users to filter alarms based on alarm classes. Include support for dark mode, enabling users to switch between a light and dark theme. Additionally, provide notification support for pushing browser notifications to the underlying OS.
-- **Docker Image:** Create and publish a Docker image on DockerHub to simplify deployment and installation.
-- **Wiki Documentation:** Prepare and publish a detailed Wiki to guide users on how to install, configure, and use AlarmWatcher.
+The first major release (v1.0.0) focused on delivering a fully functioning backend and a user-friendly frontend, along with essential features for alarm management.
+- **Backend:** Completed and thoroughly tested backend for alarm management, handling alarm states, acknowledgments, and filtering. Ensured stability and reliability for all server-side operations.
+- **Frontend:** Fully functional, web-based frontend for monitoring and managing alarms. Basic filtering capabilities, allowing users to filter alarms based on alarm classes. Included support for dark mode, enabling users to switch between a light and dark theme. Notification support for pushing browser notifications to the underlying OS.
+- **Docker Image:** Docker image on DockerHub to simplify deployment and installation.
+- **Wiki Documentation:** PDetailed Wiki to guide users on how to install, configure, and use AlarmWatcher.
+
+## Future milestones
+
+Outlined below are the planned milestones for upcoming versions.
 
 ### Version 1.1.0
 
