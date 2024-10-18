@@ -81,6 +81,8 @@ Beyond the core milestones for AlarmWatcher, additional features and extensions 
 - **Open-Source Android App:** Develop and release an open-source Android app that allows users to view alarms and receive push notifications on their mobile devices.
 - **Public Demo:** Set up a public, free-to-use demo instance of AlarmWatcher, allowing users to test its features with the following limitation: alarms will be saved for a maximum of 100 days.
 - **Node-RED Integration:** Create AlarmWatcher nodes for Node-RED.
+- **Home Assistant Integration:** Develop an integration with Home Assistant.
+- **Uptime Kuma Integration:** Implement an integration with Uptime Kuma.
 
 ## Bug Reports / Feature Requests
 
