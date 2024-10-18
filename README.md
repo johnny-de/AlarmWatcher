@@ -56,7 +56,7 @@ The first major release (v1.0.0) focused on delivering a fully functioning backe
 - **Backend:** Completed and thoroughly tested backend for alarm management, handling alarm states, acknowledgments, and filtering. Ensured stability and reliability for all server-side operations.
 - **Frontend:** Fully functional, web-based frontend for monitoring and managing alarms. Basic filtering capabilities, allowing users to filter alarms based on alarm classes. Included support for dark mode, enabling users to switch between a light and dark theme. Notification support for pushing browser notifications to the underlying OS.
 - **Docker Image:** Docker image on DockerHub to simplify deployment and installation.
-- **Wiki Documentation:** PDetailed Wiki to guide users on how to install, configure, and use AlarmWatcher.
+- **Wiki Documentation:** Detailed Wiki to guide users on how to install, configure, and use AlarmWatcher.
 
 ## Future milestones
 
