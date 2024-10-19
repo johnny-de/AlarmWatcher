@@ -19,7 +19,7 @@ AlarmWatcher is a versatile, self-hosted and intuitive to use alarm management s
         <img src="https://raw.githubusercontent.com/johnny-de/data/refs/heads/main/alarmwatcher/desktop_light.PNG" alt="Screenshot" width="600"/>
     </a>
     <p>
-        <a href="https://github.com/johnny-de/alarmwatcher/wiki/Screenshots" target="_blank" style="text-decoration:none;">More screenshots</a>
+        <a href="https://github.com/johnny-de/alarmwatcher/wiki/Screenshots" target="_blank" style="text-decoration:none;">Click here to view more screenshots.</a>
     </p>
 </div>
 
