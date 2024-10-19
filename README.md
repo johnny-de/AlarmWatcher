@@ -14,6 +14,16 @@ AlarmWatcher is a versatile, self-hosted and intuitive to use alarm management s
 <a target="_blank" href="https://hub.docker.com/r/johnnyde/alarmwatcher"><img src="https://img.shields.io/docker/pulls/johnnyde/alarmwatcher" /></a> 
 <a target="_blank" href="https://hub.docker.com/r/johnnyde/alarmwatcher"><img src="https://img.shields.io/docker/v/johnnyde/alarmwatcher" /></a>
 
+<div align="center" width="100%">
+    <img src="https://raw.githubusercontent.com/johnny-de/data/refs/heads/main/alarmwatcher/desktop_light.PNG" alt="Screenshot" width="600"/>
+    <br>
+    <p>
+        <a href="https://github.com/johnny-de/alarmwatcher/wiki/Screenshots" target="_blank" style="text-decoration: none;">
+             Click here to view more screenshots.
+        </a>
+    </p>
+</div>
+
 ## Key Features
 
 - **Centralized Alarm Management:** Aggregate and manage alarms from multiple systems in one place.
