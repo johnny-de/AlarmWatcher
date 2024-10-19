@@ -204,6 +204,24 @@
                 fetchAlarms();
             });
         });
+
+        // Add event listener to the document to handle clicks outside the table
+        document.addEventListener('click', (event) => {
+            const alarmTableBody = document.getElementById('alarmTableBody');
+            const isClickInsideTable = alarmTableBody.contains(event.target);
+
+            // Check if the click is outside the table
+            if (!isClickInsideTable) {
+                // Deselect the selected alarm
+                if (selectedAlarmId) {
+                    const previousRow = alarmTableBody.querySelector(`tr[data-alarm-id="${selectedAlarmId}"]`);
+                    if (previousRow) {
+                        previousRow.classList.remove('selected');
+                    }
+                    selectedAlarmId = null; // Reset selected alarm ID
+                }
+            }
+        });
     
         // Function to convert Unix timestamp to a readable date format
         function formatUnixTimestamp(unixTimestamp) {
