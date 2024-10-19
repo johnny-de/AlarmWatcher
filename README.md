@@ -58,6 +58,9 @@ You can explore a public demo of AlarmWatcher hosted on Glitch by clicking the l
 
 Please keep in mind that the demo may take a little while to load, especially after periods of inactivity. This happens because, on the free plan, the app goes to sleep after five minutes of inactivity, resulting in a loading screen when you visit and the app wakes up.
 
+> [!NOTE]  
+> Total access for all users combined (including loading the page and using the API to manage alarms) is limited to around 3000 requests per hour.
+
 [Click here to try the AlarmWatcher (v.1.0.0) Demo.](https://fuschia-ambiguous-salary.glitch.me/)
 
 ## Getting Started

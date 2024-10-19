@@ -380,7 +380,7 @@ function deleteExpiredAlarms() {
             console.error("Error deleting expired alarms: " + err.message);
         } else {
             if (this.changes > 0) {
-                console.log("alarm(s) deleted successfully at ${currentTime} (${new Date(date).toLocaleString()}).");
+                console.log("expired alarm(s) deleted successfully.");
             }
         }
     });
