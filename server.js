@@ -4,6 +4,51 @@ const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUI = require('swagger-ui-express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const selfsigned = require('selfsigned');
+const fs = require('fs');
+const https = require('https');
+
+
+// Define path and folder where SSL certificates will be stored
+const certFolder = path.join(__dirname, 'certs');
+const privateKeyPath = path.join(certFolder, 'server-key.pem');
+const certPath = path.join(certFolder, 'server-cert.pem');
+
+// Function to generate self-signed certificates
+function generateSelfSignedCertificates() {
+    // Define attributes for the certificate (in this case, the common name "localhost")
+    const attrs = [{ name: 'commonName', value: 'localhost' }];
+    
+    // Generate self-signed certificates valid for 10 years (3650 days)
+    const pems = selfsigned.generate(attrs, { days: 3650 });
+    
+    // Write the generated private key and certificate to the specified paths
+    fs.writeFileSync(privateKeyPath, pems.private);
+    fs.writeFileSync(certPath, pems.cert);
+
+    console.log('Self-signed certificates created successfully.');
+}
+
+// Function to check if certificates exist and generate new ones if necessary
+function checkAndGenerateCertificates() {
+    // If the private key or certificate files don't exist, generate new certificates
+    if (!fs.existsSync(privateKeyPath) || !fs.existsSync(certPath)) {
+        console.log('Certificates not found, generating new ones...');
+        generateSelfSignedCertificates();
+    } else {
+        // If the certificates already exist, log a message
+        console.log('Certificates already exist.');
+    }
+}
+
+// Call the function to check for and generate certificates if needed
+checkAndGenerateCertificates();
+
+// HTTPS options (certificates)
+const httpsOptions = {
+    key: fs.readFileSync(privateKeyPath),
+    cert: fs.readFileSync(certPath)
+};
 
 // Create express application
 const app = express();
@@ -321,8 +366,9 @@ app.get('/api/getAlarms', (req, res) => {
 });
 
 
-// Start express application
-app.listen(3777, () => console.log("Listening on port 3777."));
+// Start HTTP server on port 3777 and HTTPS server on port 3778
+app.listen(3777, () => console.log("HTTP server listening on port 3777."));
+https.createServer(httpsOptions, app).listen(3778, () => console.log('HTTPS server listening on port 3778.'));
 
 // Function to delete alarms with past delete_time
 function deleteExpiredAlarms() {

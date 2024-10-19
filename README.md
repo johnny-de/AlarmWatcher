@@ -52,6 +52,14 @@ Alarms are handled entirely by the server. Users can view and manage alarms via 
 AlarmWatcher also includes an acknowledgment mechanism to ensure critical alarms are not overlooked. When an alarm is raised, it can be marked as requiring acknowledgment. This ensures that even if the alarm is cleared or its defined duration expires, the alarm will remain visible in the system until a user acknowledges it.
 This feature is especially useful for high-priority alarms, ensuring that critical incidents receive the necessary attention and are not missed by automation or system rules.
 
+## Public Demo
+
+You can explore a public demo of AlarmWatcher hosted on Glitch by clicking the link below. This demo showcases regularly updated example alarms, and you are welcome to push your own alarms as well! 
+
+Please keep in mind that the demo may take a little while to load, especially after periods of inactivity. This happens because, on the free plan, the app goes to sleep after five minutes of inactivity, resulting in a loading screen when you visit and the app wakes up.
+
+[Click here to try the AlarmWatcher (v.1.0.0) Demo.](https://fuschia-ambiguous-salary.glitch.me/)
+
 ## Getting Started
 
 To learn how to install, configure, and run AlarmWatcher, please visit the detailed guide in the [Wiki](https://github.com/johnny-de/alarmwatcher/wiki).
@@ -89,7 +97,6 @@ The third major release (v1.2.0) will focus on building a comprehensive alarm hi
 
 Beyond the core milestones for AlarmWatcher, additional features and extensions are planned to broaden the system's reach and usability.
 - **Open-Source Android App:** Develop and release an open-source Android app that allows users to view alarms and receive push notifications on their mobile devices.
-- **Public Demo:** Set up a public, free-to-use demo instance of AlarmWatcher, allowing users to test its features with the following limitation: alarms will be saved for a maximum of 100 days.
 - **Node-RED Integration:** Create AlarmWatcher nodes for Node-RED.
 - **Home Assistant Integration:** Develop an integration with Home Assistant.
 - **Uptime Kuma Integration:** Implement an integration with Uptime Kuma.
