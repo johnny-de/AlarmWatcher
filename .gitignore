@@ -1,4 +1,4 @@
 certs/
-db/
-*.log
-*.tmp
+db/alarms.db
+*.log       # Ignore all .log files
+*.tmp       # Ignore all .tmp files
