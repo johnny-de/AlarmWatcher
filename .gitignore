@@ -1,4 +1,4 @@
-certs/      # Ignore existing certificates
-db/         # Ignore existing DB
-*.log       # Ignore all .log files
-*.tmp       # Ignore all .tmp files
+certs/
+db/
+*.log
+*.tmp
