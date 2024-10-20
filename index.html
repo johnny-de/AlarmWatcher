@@ -100,7 +100,6 @@
                 const response = await fetch(apiUrl);
                 const alarms = await response.json();
                 displayAlarms(alarms);
-                showNotifications(alarms);
             } catch (error) {
                 console.error('Error fetching alarms:', error);
             }
@@ -291,51 +290,93 @@
             }
         }
 
-        let currentNotification = null;
-        let lastAlarmCount = 0;
-        let lastWarningCount = 0;
-
         // Request notification permission
-        if (Notification.permission !== "granted") {
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") {
-                    // Permission granted, you can now show notifications
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                console.log('Notification permission granted.');
+            } else {
+                console.log('Notification permission denied.');
+            }
+        });
+
+        // Notifcation handling using a service worker
+        // Check if the browser supports Service Workers and Push API
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            // Register the service worker (service-worker.js) to handle background tasks
+            navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+                console.log('Service Worker registered successfully.');
+
+                // Request the user's permission to show notifications
+                Notification.requestPermission().then(function(permission) {
+                    // Check if permission was granted
+                    if (permission === 'granted') {
+                        // If granted, subscribe the user to push notifications
+                        subscribeUser(registration);
+                    } else {
+                        console.log('User denied notifications.');
+                    }
+                });
+
+                // Function to subscribe the user to push notifications
+                function subscribeUser(registration) {
+                    // Fetch the server's public VAPID key
+                    fetch('/vapidPublicKey')
+                    .then(response => response.json())
+                    .then(data => {
+                        const applicationServerKey = urlBase64ToUint8Array(data.publicKey); // Convert public key to UInt8Array
+
+                        // Subscribe the user to the push service
+                        registration.pushManager.subscribe({
+                            userVisibleOnly: true, // Ensures that the notification will always require user interaction
+                            applicationServerKey: applicationServerKey // Used for authenticating the subscription
+                        })
+                        .then(function(subscription) {
+                            // Log the subscription object (contains endpoint and keys)
+                            console.log('User is subscribed:', subscription);
+
+                            // Send the subscription object to the server to store it
+                            fetch('/subscribe', {
+                                method: 'POST',
+                                body: JSON.stringify(subscription),
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                        })
+                        .catch(function(error) {
+                            // Handle any errors during the subscription process
+                            console.log('Failed to subscribe the user:', error);
+                        });
+                    })
+                    .catch(function(error) {
+                        console.error('Error fetching public VAPID key:', error);
+                    });
                 }
+
+
+                // Helper function to convert the VAPID public key from Base64 to UInt8Array
+                function urlBase64ToUint8Array(base64String) {
+                    const padding = '='.repeat((4 - base64String.length % 4) % 4); // Fix padding if needed
+                    const base64 = (base64String + padding)
+                    .replace(/\-/g, '+') // Replace URL-safe characters
+                    .replace(/_/g, '/');
+                    const rawData = window.atob(base64); // Decode base64 to binary string
+                    const outputArray = new Uint8Array(rawData.length); // Create a typed array
+                    // Populate the typed array with the binary data
+                    for (let i = 0; i < rawData.length; ++i) {
+                        outputArray[i] = rawData.charCodeAt(i);
+                    }
+                    return outputArray; // Return the final array
+                }
+            })
+            .catch(function(error) {
+                // Handle errors during service worker registration
+                console.error('Service Worker registration failed:', error);
             });
+        } else {
+            // Notify if the browser does not support Service Workers or Push API
+            console.log('Push messaging is not supported in this browser.');
         }
-
-        // Function to show notifications
-        function showNotifications(alarms) {
-            const alarmCount = alarms.filter(alarm => alarm.alarm_class === 1).length;
-            const warningCount = alarms.filter(alarm => alarm.alarm_class === 2).length;
-
-            // Only show notification if the counts have increased
-            if (alarmCount > lastAlarmCount || warningCount > lastWarningCount) {
-                const title = 'AlarmWatcher - New alarms!';
-                const options = {
-                    body: `Alarms: ${alarmCount}\nWarnings: ${warningCount}`,
-                    requireInteraction: true
-                };
-
-                // Delete old notification if available
-                if (currentNotification) {
-                    currentNotification.close();
-                }
-
-                // Send notification
-                currentNotification = new Notification(title, options);
-                
-                // Update the last known counts
-                lastAlarmCount = alarmCount;
-                lastWarningCount = warningCount;
-            }
-            else if (alarmCount < lastAlarmCount || warningCount < lastWarningCount){
-                // Set the last known counts
-                lastAlarmCount = alarmCount;
-                lastWarningCount = warningCount;
-            }
-        }
-
     
         // Scroll-related functionality
         const tableWrapper = document.querySelector('.table-wrapper');

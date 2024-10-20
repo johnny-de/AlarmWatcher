@@ -27,5 +27,5 @@ docker-compose*
 .gitignore
 
 # Ignore DB and certificates as these are generated during setup
-certs/
+secrets/
 db/

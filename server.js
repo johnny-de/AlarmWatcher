@@ -1,4 +1,9 @@
-// Import required modules
+/** 
+ * +------------------------------------
+ * | IMPORTING MODULES
+ * +------------------------------------
+*/ 
+
 const express = require('express');
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUI = require('swagger-ui-express');
@@ -7,10 +12,17 @@ const path = require('path');
 const selfsigned = require('selfsigned');
 const fs = require('fs');
 const https = require('https');
+const webPush = require('web-push');
+const bodyParser = require('body-parser');
 
+/** 
+ * +------------------------------------
+ * | HTTPS HANDLING
+ * +------------------------------------
+*/ 
 
 // Define path and folder where SSL certificates will be stored
-const certFolder = path.join(__dirname, 'certs');
+const certFolder = path.join(__dirname, 'secrets');
 const privateKeyPath = path.join(certFolder, 'server-key.pem');
 const certPath = path.join(certFolder, 'server-cert.pem');
 
@@ -31,10 +43,10 @@ function generateSelfSignedCertificates() {
 
 // Function to check if certificates exist and generate new ones if necessary
 function checkAndGenerateCertificates() {
-    // Ensure the certs folder exists
+    // Ensure the secrets folder exists
     if (!fs.existsSync(certFolder)) {
-        fs.mkdirSync(certFolder, { recursive: true }); // Create certs folder
-        console.log('Certs folder created.');
+        fs.mkdirSync(certFolder, { recursive: true }); // Create secrets folder
+        console.log('secrets folder created.');
     }
     // If the private key or certificate files don't exist, generate new certificates
     if (!fs.existsSync(privateKeyPath) || !fs.existsSync(certPath)) {
@@ -55,11 +67,23 @@ const httpsOptions = {
     cert: fs.readFileSync(certPath)
 };
 
+/** 
+ * +------------------------------------
+ * | EXPRESS DEFINITION
+ * +------------------------------------
+*/ 
+
 // Create express application
 const app = express();
 
 // Serve static files from public folder (CSS, JS, images, etc.)
 app.use(express.static(path.join(__dirname, 'public')));
+
+/** 
+ * +------------------------------------
+ * | SWAGGER DEFINITION
+ * +------------------------------------
+*/ 
 
 // Create swagger options
 const swaggerOptions = {
@@ -81,6 +105,12 @@ const swaggerUiOptions = {
 // Define swagger docs
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs, swaggerUiOptions));
+
+/** 
+ * +------------------------------------
+ * | DB HANDLING
+ * +------------------------------------
+*/ 
 
 // Define path and folder for the database
 const dbFolder = path.join(__dirname, 'db');
@@ -123,13 +153,23 @@ const db = new sqlite3.Database(dbPath, (err) => {
     }
 });
 
-// Frontend
+/** 
+ * +------------------------------------
+ * | FRONTEND
+ * +------------------------------------
+*/ 
+
 app.get('/', (req, res) => {
     // Return index.html
     return res.status(200).sendFile(__dirname + '/index.html');
 });
 
-// API
+/** 
+ * +------------------------------------
+ * | API
+ * +------------------------------------
+*/ 
+
 /**
  * @swagger
  * /api/serverTime:
@@ -189,31 +229,43 @@ app.get('/api/serverTime', (req, res) => {
  *         description: Error inserting alarm
  */
 app.get('/api/raiseAlarm', (req, res) => {
-    alarm_id = req.query.alarm_id;
-    alarm_class = Number(req.query.alarm_class);
-    alarm_state = req.query.alarm_state || "on";            // Default to "on" if not provided
-    raised_time = Number(Math.floor(Date.now() / 1000));    // Current UNIX timestamp in seconds
-    require_ack = ((req.query.req_ack ||false) == "true");  // Default to false if not provided
-    delete_time = Number(req.query.duration) || null;       // Default to null if not provided
+    const alarm_id = req.query.alarm_id;
+    const alarm_class = Number(req.query.alarm_class);
+    const alarm_state = req.query.alarm_state || "on";          // Default to "on" if not provided
+    const raised_time = Math.floor(Date.now() / 1000);          // Current UNIX timestamp in seconds
+    const require_ack = (req.query.req_ack || false) == "true"; // Default to false if not provided
+    const delete_time = Number(req.query.duration) || null;     // Default to null if not provided
 
     // Calculate deletion time (if provided) from duration and current time
-    if(delete_time){
+    if (delete_time) {
         delete_time += raised_time;
     }
 
-    // Add the alarm to the table
-    db.run(
-        `INSERT OR REPLACE INTO alarms (alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time) 
-        VALUES (?, ?, ?, ?, ?, ?)`,
-        [alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time],
-        function(err) {
-            if (err) {
-                return res.status(400).send("Error inserting alarm: " + err.message);
-            } else {
-                res.status(200).send("Alarm inserted successfully!");
-            }
+    // Check if an alarm with the same alarm_id and class 1 or 2 already exists
+    db.get(`SELECT COUNT(*) AS count FROM alarms WHERE alarm_id = ? AND alarm_class IN (1, 2)`, [alarm_id], (err, row) => {
+        if (err) {
+            return res.status(400).send("Error checking for existing alarm: " + err.message);
         }
-    );
+
+        // If no existing alarm was found, send a notification if new alarm is class 1 or 2
+        if (row.count === 0 && alarm_class <=2 ) {
+            sendNotification();
+        }
+
+        // Add the alarm to the table
+        db.run(
+            `INSERT OR REPLACE INTO alarms (alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time) 
+            VALUES (?, ?, ?, ?, ?, ?)`,
+            [alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time],
+            function(err) {
+                if (err) {
+                    return res.status(400).send("Error inserting alarm: " + err.message);
+                } else {
+                    res.status(200).send("Alarm inserted successfully!");
+                }
+            }
+        );
+    });
 });
 
 /**
@@ -385,10 +437,103 @@ app.get('/api/getAlarms', (req, res) => {
     });
 });
 
+/** 
+ * +------------------------------------
+ * | NOTIFICATION HANDLING
+ * +------------------------------------
+*/ 
+
+app.use(bodyParser.json());
+
+// Path to the VAPID keys file
+const secretsPath = path.join(__dirname, 'secrets', 'vapid.json');
+let vapidKeys;
+ 
+// Function to load or generate VAPID keys
+function loadOrGenerateVapidKeys() {
+    try {
+        // Check if the VAPID keys file exists
+        if (fs.existsSync(secretsPath)) {
+            // Read and parse the VAPID keys from the JSON file
+            const data = fs.readFileSync(secretsPath, 'utf8');
+            vapidKeys = JSON.parse(data);
+            console.log('Loaded VAPID keys from secrets file.');
+        } else {
+            // Generate VAPID keys if the file does not exist
+            vapidKeys = webPush.generateVAPIDKeys();
+            fs.writeFileSync(secretsPath, JSON.stringify(vapidKeys, null, 2));
+            console.log('Generated new VAPID keys and saved to secrets file.');
+        }
+    } catch (error) {
+        console.error('Error loading or generating VAPID keys:', error);
+        process.exit(1); // Exit the application if keys can't be loaded or generated
+    }
+}
+
+// Load or generate the VAPID keys
+loadOrGenerateVapidKeys();
+
+// Set VAPID details
+webPush.setVapidDetails(
+    'mailto:youremail@example.com', // Replace with your email
+    vapidKeys.publicKey,
+    vapidKeys.privateKey
+);
+
+// Endpoint to serve the public VAPID key
+app.get('/vapidPublicKey', (req, res) => {
+    res.status(200).json({ publicKey: vapidKeys.publicKey });
+});
+
+webPush.setVapidDetails(
+  'mailto:youremail@example.com',
+  vapidKeys.publicKey,
+  vapidKeys.privateKey
+);
+
+// Simple in-memory storage for subscriptions
+const subscriptions = [];
+
+// Endpoint to receive and store subscription
+app.post('/subscribe', (req, res) => {
+  const subscription = req.body;
+
+  // Store the subscription in the array
+  subscriptions.push(subscription);
+
+  res.status(201).json({ message: 'Subscription received and stored.' });
+});
+
+function sendNotification() {
+    const notificationPayload = JSON.stringify({
+        title: 'AlarmWatcher',
+        body: 'New alarms or warnings!',
+    });
+
+    // Send notification to all stored subscriptions
+    const promises = subscriptions.map(subscription => {
+    return webPush.sendNotification(subscription, notificationPayload)
+        .then(response => console.log('Notification sent successfully'))
+        .catch(error => console.error('Error sending notification:', error));
+    });
+}
+
+/** 
+ * +------------------------------------
+ * | SARTING EXPRESS SERVER
+ * +------------------------------------
+*/ 
 
 // Start HTTP server on port 3777 and HTTPS server on port 3778
 app.listen(3777, () => console.log("HTTP server listening on port 3777."));
 https.createServer(httpsOptions, app).listen(3778, () => console.log('HTTPS server listening on port 3778.'));
+
+
+/** 
+ * +------------------------------------
+ * | HANDLING AUTO DELETION
+ * +------------------------------------
+*/ 
 
 // Function to delete alarms with past delete_time
 function deleteExpiredAlarms() {
