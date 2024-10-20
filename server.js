@@ -78,7 +78,7 @@ const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs, swaggerUiOptions));
 
 // Create and connect to an SQLite database
-const db = new sqlite3.Database('./alarms.db', (err) => {
+const db = new sqlite3.Database('./db/alarms.db', (err) => {
     if (err) {
         console.error("Error opening database: " + err.message);
     } else {

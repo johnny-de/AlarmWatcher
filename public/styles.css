@@ -92,7 +92,7 @@ header {
 .nav-container {
     position: absolute;
     width: auto;
-    top: 70px;
+    top: 50px;
     right: 20px;
     min-width: 200px;
     z-index: 20;
