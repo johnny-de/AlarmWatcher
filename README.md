@@ -60,7 +60,7 @@ Please keep in mind that the demo may take a little while to load, especially af
 > [!NOTE]  
 > Total access for all users combined (including loading the page and using the API to manage alarms) is limited to around 3000 requests per hour.
 
-[Click here to try the AlarmWatcher (v.1.0.1) Demo.](https://holly-sedate-beech.glitch.me/)
+[Click here to try the AlarmWatcher (v.1.0.1) Demo.](https://mirror-time-boot.glitch.me/)
 
 ## Getting started
 
