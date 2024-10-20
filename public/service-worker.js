@@ -10,7 +10,7 @@ self.addEventListener('push', function(event) {
     const options = {
       body: data.body || 'New alarms!',
       icon: data.icon || '/icon.svg',
-      badge: data.badge || '/icon.svg',
+      badge: data.badge || '/icon_black.svg',
       tag: data.tag || 'notification-tag'
     };
   
