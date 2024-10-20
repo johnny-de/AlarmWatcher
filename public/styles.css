@@ -3,7 +3,8 @@
     --color_background: white;
     --color_header: white;
     --color_table: white;
-    --shadow: 0 0 15px 5px rgb(222, 222, 222);
+    --color_shadow: rgb(222, 222, 222);
+    --shadow: 0 0 15px 5px var(--color_shadow);
     --color_text: black;
     --color_button_text: white;
     --color_red: rgb(239, 68, 68);
@@ -26,6 +27,7 @@ html {
         --color_background: rgb(33, 33, 33);
         --color_header: rgb(23, 23, 23);
         --color_table: rgb(13, 13, 13);
+        --color_shadow: rgb(0, 0, 0);
         --shadow: none;
         --color_text: rgb(236, 236, 236);
         --color_button_text: rgb(236, 236, 236);
@@ -51,10 +53,14 @@ body {
     background-color: var(--color_background);
 }
 
+a {
+    color: var(--color_text);
+    text-decoration: none;
+}
+
 /* Button design */
 button {
     padding: 5px 10px;
-    color: var(--color_button_text);
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -64,13 +70,8 @@ button {
 
 /* +++ Header +++ */
 
-header a {
-    color: var(--color_text);
-    text-decoration: none;
-}
-
 header {
-    min-height: 60px;
+    height: 60px;
     box-shadow: var(--shadow);
     background-color: var(--color_header);
 }
@@ -79,27 +80,59 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 100%;
     padding: 5px 25px 5px 25px;
 }
 
 .logo img {
-    max-height: 40px;
-    height: auto;
+    height: 35px;
+    width: auto;
+    padding: 10px;
+}
+
+.nav-container {
+    position: absolute;
+    width: auto;
+    top: 70px;
+    right: 20px;
+    min-width: 200px;
+    z-index: 20;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#nav-links {
+    display: none;
+    background-color: var(--color_header);
+    border: 1px solid var(--color_shadow);
+    border-radius: 10px;
     padding: 5px;
 }
 
-.logo {
+.nav-container a {
+    padding: 10px 10px;
     display: block;
-    width: 300px;
-    max-height: 40px; 
+    border-radius: 5px;
 }
 
-nav ul li {
+.menu-button {
+    color: var(--color_text);
     display: flex;
-    gap: 20px;
-    padding: 5px;
-    display: inline;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 40px;
+    height: 40px;
+    background-color: var(--color_header);
+    padding-bottom: 10px;
+}
+
+.menu-button svg {
+    min-width: 30px;
+    min-height: 30px;
+}
+
+.nav-container a:hover {
+    background-color: var(--color_shadow);
 }
 
 /* +++ Filter buttons +++ */
@@ -113,8 +146,6 @@ nav ul li {
     padding: 10px 15px;
     margin: 0 5px; /* Space between buttons */
     cursor: pointer;
-    border: none;
-    border-radius: 5px;
     color: var(--color_button_text);
 }
 
@@ -196,7 +227,6 @@ th {
 .alarm-class-default {
     background-color: var(--color_table);
 }
-
 
 /* Darken alarm when hovering over it */
 tbody tr:hover {

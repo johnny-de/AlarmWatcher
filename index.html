@@ -8,18 +8,25 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
 </head>
 <body>
-    <!-- Header with logo and navigation links -->
+    <!-- Header with logo and hamburger menu -->
     <header>
         <div class="header-container">
             <div class="logo">
                 <img src="/logo.svg" alt="AlarmWatcher">
             </div>
-            <nav>
-                <ul>
-                    <li><a href="/api-docs" target="_blank">API Docs</a></li>
-                    <li><a href="https://github.com/johnny-de/alarmwatcher" target="_blank">GitHub</a></li>
-                </ul>
-            </nav>
+            <!-- Hamburger menu to show navigation links -->
+            <button class="menu-button" onclick="navButton()" aria-label="Toggle navigation">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+            </button>
+        </div>
+        <div class="nav-container">
+            <!-- Navigation links (hidden by default) -->
+            <div id="nav-links">
+                <a href="/api-docs">API Docs</a>
+                <a href="https://github.com/johnny-de/alarmwatcher">GitHub</a>
+            </div>
         </div>
     </header>
 
@@ -50,6 +57,33 @@
     </div>
 
     <script>
+        // Track whether the navigation is open
+        let isNavOpen = false;
+
+        // Toggle between showing and hiding the navigation menu links when the user clicks on the hamburger menu
+        function navButton() {
+            const navLinks = document.getElementById("nav-links");
+            if (navLinks.style.display === "block") {
+                navLinks.style.display = "none";
+                isNavOpen = false;
+            } else {
+                navLinks.style.display = "block";
+                isNavOpen = true;
+            }
+        }
+
+        // Close the navigation if clicking outside the menu
+        document.addEventListener('click', function (event) {
+            const navLinks = document.getElementById("nav-links");
+            const menuButton = document.querySelector('.menu-button');
+
+            // Check if the navigation is open and the click was outside the navigation and the menu button
+            if (isNavOpen && !navLinks.contains(event.target) && !menuButton.contains(event.target)) {
+                navLinks.style.display = "none";
+                isNavOpen = false;
+            }
+        });
+
         // API endpoint for alarms
         const apiUrl = '/api/getAlarms';
     
@@ -102,7 +136,7 @@
                         row.classList.add('alarm-class-3');
                         break;
                     default:
-                        row.classList.add('alarm-class-default'); // Optional: for any other class
+                        row.classList.add('alarm-class-default'); // for any other class
                 }
     
                 const idCell = document.createElement('td');
@@ -129,7 +163,7 @@
                     ackButton.classList.add('ack-button');
                     ackButton.onclick = () => acknowledgeAlarm(alarm.alarm_id);
 
-                    // Add the Heroicons SVG instead of text
+                    // Add the Heroicons SVG
                     ackButton.innerHTML = `
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="svg-icon">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
@@ -143,7 +177,7 @@
                 delButton.classList.add('del-button');
                 delButton.onclick = () => deleteAlarm(alarm.alarm_id);
 
-                // Add the Heroicons SVG instead of text
+                // Add the Heroicons SVG
                 delButton.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="svg-icon">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
