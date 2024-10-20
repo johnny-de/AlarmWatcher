@@ -24,8 +24,8 @@
         <div class="nav-container">
             <!-- Navigation links (hidden by default) -->
             <div id="nav-links">
-                <a href="/api-docs">API Docs</a>
-                <a href="https://github.com/johnny-de/alarmwatcher">GitHub</a>
+                <a href="/api-docs" target="_blank">API Docs</a>
+                <a href="https://github.com/johnny-de/alarmwatcher" target="_blank">GitHub</a>
             </div>
         </div>
     </header>
@@ -78,7 +78,7 @@
             const menuButton = document.querySelector('.menu-button');
 
             // Check if the navigation is open and the click was outside the navigation and the menu button
-            if (isNavOpen && !navLinks.contains(event.target) && !menuButton.contains(event.target)) {
+            if (isNavOpen && !menuButton.contains(event.target)) {
                 navLinks.style.display = "none";
                 isNavOpen = false;
             }
