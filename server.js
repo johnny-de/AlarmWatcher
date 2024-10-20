@@ -14,7 +14,7 @@ const certFolder = path.join(__dirname, 'certs');
 const privateKeyPath = path.join(certFolder, 'server-key.pem');
 const certPath = path.join(certFolder, 'server-cert.pem');
 
-// Function to generate self-signed certificates
+// Generate self-signed certificates
 function generateSelfSignedCertificates() {
     // Define attributes for the certificate (in this case, the common name "localhost")
     const attrs = [{ name: 'commonName', value: 'localhost' }];
@@ -31,6 +31,11 @@ function generateSelfSignedCertificates() {
 
 // Function to check if certificates exist and generate new ones if necessary
 function checkAndGenerateCertificates() {
+    // Ensure the certs folder exists
+    if (!fs.existsSync(certFolder)) {
+        fs.mkdirSync(certFolder, { recursive: true }); // Create certs folder
+        console.log('Certs folder created.');
+    }
     // If the private key or certificate files don't exist, generate new certificates
     if (!fs.existsSync(privateKeyPath) || !fs.existsSync(certPath)) {
         console.log('Certificates not found, generating new ones...');
@@ -77,8 +82,23 @@ const swaggerUiOptions = {
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs, swaggerUiOptions));
 
+// Define path and folder for the database
+const dbFolder = path.join(__dirname, 'db');
+const dbPath = path.join(dbFolder, 'alarms.db');
+
+// Ensure the db folder exists
+function ensureDbFolderExists() {
+    if (!fs.existsSync(dbFolder)) {
+        fs.mkdirSync(dbFolder, { recursive: true });
+        console.log('DB folder created.');
+    }
+}
+
+// Ensure the db folder exists before connecting to the database
+ensureDbFolderExists();
+
 // Create and connect to an SQLite database
-const db = new sqlite3.Database('./db/alarms.db', (err) => {
+const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error("Error opening database: " + err.message);
     } else {
