@@ -290,32 +290,51 @@
             }
         }
 
-        // Request notification permission
-        Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-                console.log('Notification permission granted.');
-            } else {
-                console.log('Notification permission denied.');
-            }
-        });
-
-        // Notifcation handling using a service worker
         // Check if the browser supports Service Workers and Push API
         if ('serviceWorker' in navigator && 'PushManager' in window) {
             // Register the service worker (service-worker.js) to handle background tasks
             navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
-                console.log('Service Worker registered successfully.');
-
                 // Request the user's permission to show notifications
                 Notification.requestPermission().then(function(permission) {
                     // Check if permission was granted
                     if (permission === 'granted') {
-                        // If granted, subscribe the user to push notifications
-                        subscribeUser(registration);
+                        // Check if the user is already subscribed
+                        checkSubscription(registration);
                     } else {
                         console.log('User denied notifications.');
                     }
                 });
+
+                // Function to check if the user is already subscribed to push notifications
+                function checkSubscription(registration) {
+                    registration.pushManager.getSubscription().then(function(subscription) {
+                        if (subscription) {
+                            // If a subscription exists, unsubscribe the user
+                            console.log('User is already subscribed:', subscription);
+                            unsubscribeUser(subscription);
+                        } else {
+                            // If no subscription exists, subscribe the user
+                            subscribeUser(registration);
+                        }
+                    }).catch(function(error) {
+                        console.error('Error checking subscription:', error);
+                    });
+                }
+
+                // Function to unsubscribe the user from push notifications
+                function unsubscribeUser(subscription) {
+                    subscription.unsubscribe().then(function(success) {
+                        if (success) {
+                            console.log('User successfully unsubscribed.');
+                        } else {
+                            console.log('Failed to unsubscribe the user.');
+                        }
+                    }).catch(function(error) {
+                        console.error('Error during unsubscribe:', error);
+                    });
+                    // Subscribe again with new credentials
+                    subscribeUser(registration);
+                }
 
                 // Function to subscribe the user to push notifications
                 function subscribeUser(registration) {
@@ -332,16 +351,9 @@
                         })
                         .then(function(subscription) {
                             // Log the subscription object (contains endpoint and keys)
-                            console.log('User is subscribed:', subscription);
-
+                            console.log('User subscribed successfully:', subscription);
                             // Send the subscription object to the server to store it
-                            fetch('/subscribe', {
-                                method: 'POST',
-                                body: JSON.stringify(subscription),
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                }
-                            });
+                            sendSubscriptionToServer(subscription);
                         })
                         .catch(function(error) {
                             // Handle any errors during the subscription process
@@ -353,6 +365,25 @@
                     });
                 }
 
+                // Function to send the subscription object to the server
+                function sendSubscriptionToServer(subscription) {
+                    fetch('/subscribe', {
+                        method: 'POST',
+                        body: JSON.stringify(subscription),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to send subscription to server.');
+                        }
+                        console.log('Subscription sent to server successfully.');
+                    })
+                    .catch(function(error) {
+                        console.error('Error sending subscription to server:', error);
+                    });
+                }
 
                 // Helper function to convert the VAPID public key from Base64 to UInt8Array
                 function urlBase64ToUint8Array(base64String) {
@@ -373,10 +404,12 @@
                 // Handle errors during service worker registration
                 console.error('Service Worker registration failed:', error);
             });
+            
         } else {
             // Notify if the browser does not support Service Workers or Push API
             console.log('Push messaging is not supported in this browser.');
         }
+
     
         // Scroll-related functionality
         const tableWrapper = document.querySelector('.table-wrapper');

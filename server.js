@@ -475,7 +475,7 @@ loadOrGenerateVapidKeys();
 
 // Set VAPID details
 webPush.setVapidDetails(
-    'mailto:youremail@example.com', // Replace with your email
+    'mailto:mail@mail.com', // Replace with your email
     vapidKeys.publicKey,
     vapidKeys.privateKey
 );
@@ -484,12 +484,6 @@ webPush.setVapidDetails(
 app.get('/vapidPublicKey', (req, res) => {
     res.status(200).json({ publicKey: vapidKeys.publicKey });
 });
-
-webPush.setVapidDetails(
-  'mailto:youremail@example.com',
-  vapidKeys.publicKey,
-  vapidKeys.privateKey
-);
 
 // Simple in-memory storage for subscriptions
 const subscriptions = [];
