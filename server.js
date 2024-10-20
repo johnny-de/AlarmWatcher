@@ -475,7 +475,7 @@ loadOrGenerateVapidKeys();
 
 // Set VAPID details
 webPush.setVapidDetails(
-    'mailto:mail@mail.com', // Replace with your email
+    'mailto:mail@mail.com',
     vapidKeys.publicKey,
     vapidKeys.privateKey
 );
@@ -490,10 +490,15 @@ const subscriptions = [];
 
 // Endpoint to receive and store subscription
 app.post('/subscribe', (req, res) => {
-  const subscription = req.body;
+    const subscription = req.body;
 
-  // Store the subscription in the array
-  subscriptions.push(subscription);
+    // Store the subscription in the array
+    subscriptions.push(subscription);
+
+    // Ensure subscriptions array never exceeds 100 entries
+    if (subscriptions.length > 100) {
+        subscriptions.shift(); // Remove the oldest subscription (first entry)
+    }
 
   res.status(201).json({ message: 'Subscription received and stored.' });
 });
