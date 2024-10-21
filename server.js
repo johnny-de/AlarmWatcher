@@ -241,31 +241,54 @@ app.get('/api/raiseAlarm', (req, res) => {
         delete_time += raised_time;
     }
 
-    // Check if an alarm with the same alarm_id and class 1 or 2 already exists
-    db.get(`SELECT COUNT(*) AS count FROM alarms WHERE alarm_id = ? AND alarm_class IN (1, 2)`, [alarm_id], (err, row) => {
+    // Send notification if alarm with the same class and state existed not before
+    db.get(`SELECT COUNT(*) AS count FROM alarms WHERE alarm_id = ? AND alarm_class = ? AND alarm_state = ?`, [alarm_id],[alarm_class],[alarm_state], (err, row) => {
         if (err) {
             return res.status(400).send("Error checking for existing alarm: " + err.message);
         }
 
-        // If no existing alarm was found, send a notification if new alarm is class 1 or 2
-        if (row.count === 0 && alarm_class <=2 ) {
-            sendNotification();
+        // If an existing alarm was found
+        if (row.count > 0) {
+            // Handle case where alarm already exists if needed
+            return res.status(400).send("Alarm with the same ID and class already exists.");
         }
 
-        // Add the alarm to the table
-        db.run(
-            `INSERT OR REPLACE INTO alarms (alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time) 
-            VALUES (?, ?, ?, ?, ?, ?)`,
-            [alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time],
-            function(err) {
-                if (err) {
-                    return res.status(400).send("Error inserting alarm: " + err.message);
-                } else {
-                    res.status(200).send("Alarm inserted successfully!");
+        // Send notification if new alarm is class 1 or 2
+        if (alarm_class <= 2) {
+            // Count the number of rows with alarm_class == 1
+            db.get(`SELECT COUNT(*) AS count FROM alarms WHERE alarm_class = 1`, [], (err1, row1) => {
+                if (err1) {
+                    return res.status(400).send("Error counting alarms with class 1: " + err1.message);
                 }
-            }
-        );
+                const countClass1 = row1.count;
+
+                // After counting class 1, count the number of rows with alarm_class == 2
+                db.get(`SELECT COUNT(*) AS count FROM alarms WHERE alarm_class = 2`, [], (err2, row2) => {
+                    if (err2) {
+                        return res.status(400).send("Error counting alarms with class 2: " + err2.message);
+                    }
+                    const countClass2 = row2.count;
+
+                    // Send notification after both counts are retrieved
+                    sendNotification(alarm_id, alarm_state, alarm_class, countClass1, countClass2);
+                });
+            });
+        }
     });
+
+    // Add the alarm to the table
+    db.run(
+        `INSERT OR REPLACE INTO alarms (alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time) 
+        VALUES (?, ?, ?, ?, ?, ?)`,
+        [alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time],
+        function(err) {
+            if (err) {
+                return res.status(400).send("Error inserting alarm: " + err.message);
+            } else {
+                res.status(200).send("Alarm inserted successfully!");
+            }
+        }
+    );
 });
 
 /**
@@ -485,28 +508,60 @@ app.get('/vapidPublicKey', (req, res) => {
     res.status(200).json({ publicKey: vapidKeys.publicKey });
 });
 
-// Simple in-memory storage for subscriptions
-const subscriptions = [];
+// Initialize subscriptions array
+let subscriptions = [];
+
+// File path for storing subscriptions
+const subscriptionsFilePath = path.join(__dirname, 'secrets', 'subscriptions.json');
+
+// Load subscriptions from the file when the server starts
+const loadSubscriptions = () => {
+    if (fs.existsSync(subscriptionsFilePath)) {
+        const data = fs.readFileSync(subscriptionsFilePath, 'utf-8');
+        try {
+            subscriptions = JSON.parse(data);
+            console.log(`Loaded ${subscriptions.length} subscriptions from file.`);
+        } catch (err) {
+            console.error('Failed to load notification subscriptions:', err);
+        }
+    }
+};
+
+// Load subscriptions on server start
+loadSubscriptions();
 
 // Endpoint to receive and store subscription
 app.post('/subscribe', (req, res) => {
     const subscription = req.body;
 
-    // Store the subscription in the array
-    subscriptions.push(subscription);
+    // Check for duplicates based on the endpoint
+    const isDuplicate = subscriptions.some(sub => sub.endpoint === subscription.endpoint);
+    if (!isDuplicate) {
+        // Store the subscription in the array
+        subscriptions.push(subscription);
+        // Save subscriptions to the file
+        saveSubscriptions();
+    }
 
     // Ensure subscriptions array never exceeds 100 entries
     if (subscriptions.length > 100) {
         subscriptions.shift(); // Remove the oldest subscription (first entry)
     }
 
-  res.status(201).json({ message: 'Subscription received and stored.' });
+    res.status(201).json({ message: 'Subscription received and stored.' });
 });
 
-function sendNotification() {
+// Save subscriptions to the file
+const saveSubscriptions = () => {
+    fs.writeFileSync(subscriptionsFilePath, JSON.stringify(subscriptions, null, 2), 'utf-8');
+};
+
+function sendNotification(messageAlarm, messageState, messageClass, countAlarm, countWarnings) {
+    // Define message content
+    const notificationClass = messageClass === 1 ? 'alarm' : messageClass === 2 ? 'warning' : 'alarm';
     const notificationPayload = JSON.stringify({
-        title: 'AlarmWatcher',
-        body: 'New alarms or warnings!',
+        title: 'AlarmWatcher - New ' + notificationClass + '!',
+        body: messageAlarm + ' is ' + messageState + '!\n> alarms: ' + countAlarm + '  > warnings: ' + countWarnings + '',
     });
 
     // Send notification to all stored subscriptions

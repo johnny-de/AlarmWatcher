@@ -298,43 +298,12 @@
                 Notification.requestPermission().then(function(permission) {
                     // Check if permission was granted
                     if (permission === 'granted') {
-                        // Check if the user is already subscribed
-                        checkSubscription(registration);
+                        // Subscribe user
+                        subscribeUser(registration);
                     } else {
                         console.log('User denied notifications.');
                     }
                 });
-
-                // Function to check if the user is already subscribed to push notifications
-                function checkSubscription(registration) {
-                    registration.pushManager.getSubscription().then(function(subscription) {
-                        if (subscription) {
-                            // If a subscription exists, unsubscribe the user
-                            console.log('User is already subscribed:', subscription);
-                            unsubscribeUser(subscription);
-                        } else {
-                            // If no subscription exists, subscribe the user
-                            subscribeUser(registration);
-                        }
-                    }).catch(function(error) {
-                        console.error('Error checking subscription:', error);
-                    });
-                }
-
-                // Function to unsubscribe the user from push notifications
-                function unsubscribeUser(subscription) {
-                    subscription.unsubscribe().then(function(success) {
-                        if (success) {
-                            console.log('User successfully unsubscribed.');
-                        } else {
-                            console.log('Failed to unsubscribe the user.');
-                        }
-                    }).catch(function(error) {
-                        console.error('Error during unsubscribe:', error);
-                    });
-                    // Subscribe again with new credentials
-                    subscribeUser(registration);
-                }
 
                 // Function to subscribe the user to push notifications
                 function subscribeUser(registration) {
@@ -344,24 +313,46 @@
                     .then(data => {
                         const applicationServerKey = urlBase64ToUint8Array(data.publicKey); // Convert public key to UInt8Array
 
-                        // Subscribe the user to the push service
+                        // Try subscribing the user to the push service
                         registration.pushManager.subscribe({
                             userVisibleOnly: true, // Ensures that the notification will always require user interaction
                             applicationServerKey: applicationServerKey // Used for authenticating the subscription
                         })
                         .then(function(subscription) {
-                            // Log the subscription object (contains endpoint and keys)
+                            // Subscription succeeded, log and send to server
                             console.log('User subscribed successfully:', subscription);
-                            // Send the subscription object to the server to store it
                             sendSubscriptionToServer(subscription);
                         })
                         .catch(function(error) {
-                            // Handle any errors during the subscription process
-                            console.log('Failed to subscribe the user:', error);
+                            // If subscription fails, try to unsubscribe first and retry subscription
+                            console.error('Failed to subscribe the user, attempting to unsubscribe:', error);
+                            registration.pushManager.getSubscription().then(function(existingSubscription) {
+                                if (existingSubscription) {
+                                    // Unsubscribe the user
+                                    unsubscribeUser(existingSubscription, registration);
+                                }
+                            }).catch(function(unsubError) {
+                                console.error('Error during unsubscribe attempt:', unsubError);
+                            });
                         });
                     })
                     .catch(function(error) {
                         console.error('Error fetching public VAPID key:', error);
+                    });
+                }
+
+                // Function to unsubscribe the user from push notifications and retry subscription
+                function unsubscribeUser(subscription, registration) {
+                    subscription.unsubscribe().then(function(success) {
+                        if (success) {
+                            console.log('User successfully unsubscribed. Retrying subscription.');
+                            // After successful unsubscribe, try subscribing again
+                            subscribeUser(registration);
+                        } else {
+                            console.log('Failed to unsubscribe the user.');
+                        }
+                    }).catch(function(error) {
+                        console.error('Error during unsubscribe:', error);
                     });
                 }
 
@@ -389,8 +380,8 @@
                 function urlBase64ToUint8Array(base64String) {
                     const padding = '='.repeat((4 - base64String.length % 4) % 4); // Fix padding if needed
                     const base64 = (base64String + padding)
-                    .replace(/\-/g, '+') // Replace URL-safe characters
-                    .replace(/_/g, '/');
+                        .replace(/\-/g, '+') // Replace URL-safe characters
+                        .replace(/_/g, '/');
                     const rawData = window.atob(base64); // Decode base64 to binary string
                     const outputArray = new Uint8Array(rawData.length); // Create a typed array
                     // Populate the typed array with the binary data
@@ -409,6 +400,7 @@
             // Notify if the browser does not support Service Workers or Push API
             console.log('Push messaging is not supported in this browser.');
         }
+
 
     
         // Scroll-related functionality
