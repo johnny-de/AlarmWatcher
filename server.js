@@ -567,7 +567,6 @@ function sendNotification(messageAlarm, messageState, messageClass, countAlarm, 
     // Send notification to all stored subscriptions
     const promises = subscriptions.map(subscription => {
     return webPush.sendNotification(subscription, notificationPayload)
-        .then(response => console.log('Notification sent successfully'))
         .catch(error => console.error('Error sending notification:', error));
     });
 }
