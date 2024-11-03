@@ -14,6 +14,56 @@ const fs = require('fs');
 const https = require('https');
 const webPush = require('web-push');
 const bodyParser = require('body-parser');
+const { exec } = require('child_process');
+
+/** 
+ * +------------------------------------
+ * | LOAD SETTINGS
+ * +------------------------------------
+*/ 
+
+const filePath = path.join(__dirname, 'secrets', 'settings.json');
+
+// Define default JSON content
+const defaultSettings = {
+  ports: {
+    http_port: 3777,
+    https_port: 3778,
+  },
+  https: {
+    allow_http: true,
+    generate_certificates: {
+      common_name: "localhost",
+      alternative_names: "DNS:example.com, IP:192.168.0.100",
+    },
+  },
+};
+
+// Function to load or create settings.json
+function loadOrCreateSettings() {
+  // Check if the file exists
+  if (fs.existsSync(filePath)) {
+    // If file exists, read and parse it
+    const data = fs.readFileSync(filePath, 'utf-8');
+    try {
+      const settings = JSON.parse(data);
+      console.log("Loaded settings from file.");
+      return settings;
+    } catch (err) {
+      console.error("Error parsing settings.json:", err);
+      return null;
+    }
+  } else {
+    // If file does not exist, create it with default settings
+    fs.mkdirSync(path.dirname(filePath), { recursive: true }); // Create directory if needed
+    fs.writeFileSync(filePath, JSON.stringify(defaultSettings, null, 2));
+    console.log("Ceated settings file with default settings.");
+    return defaultSettings;
+  }
+}
+
+// Load settings once at the start
+const settings = loadOrCreateSettings();
 
 /** 
  * +------------------------------------
@@ -28,8 +78,11 @@ const certPath = path.join(certFolder, 'server-cert.pem');
 
 // Generate self-signed certificates
 function generateSelfSignedCertificates() {
-    // Define attributes for the certificate (in this case, the common name "localhost")
-    const attrs = [{ name: 'commonName', value: 'localhost' }];
+    // Define attributes for the certificate
+    const attrs = [
+        { name: 'commonName', value: settings.https.common_name }, 
+        { name: 'subjectAltName', value: settings.https.alternative_names }
+    ];
     
     // Generate self-signed certificates valid for 10 years (3650 days)
     const pems = selfsigned.generate(attrs, { days: 3650 });
@@ -38,7 +91,7 @@ function generateSelfSignedCertificates() {
     fs.writeFileSync(privateKeyPath, pems.private);
     fs.writeFileSync(certPath, pems.cert);
 
-    console.log('Self-signed certificates created successfully.');
+    console.log('Self-signed certificates created successfully (valid for 10 years).');
 }
 
 // Function to check if certificates exist and generate new ones if necessary
@@ -162,6 +215,11 @@ const db = new sqlite3.Database(dbPath, (err) => {
 app.get('/', (req, res) => {
     // Return index.html
     return res.status(200).sendFile(__dirname + '/index.html');
+});
+
+app.get('/settings', (req, res) => {
+    // Return index.html
+    return res.status(200).sendFile(__dirname + '/settings.html');
 });
 
 /** 
@@ -480,12 +538,12 @@ function loadOrGenerateVapidKeys() {
             // Read and parse the VAPID keys from the JSON file
             const data = fs.readFileSync(secretsPath, 'utf8');
             vapidKeys = JSON.parse(data);
-            console.log('Loaded VAPID keys from secrets file.');
+            console.log('Loaded VAPID keys from file.');
         } else {
             // Generate VAPID keys if the file does not exist
             vapidKeys = webPush.generateVAPIDKeys();
             fs.writeFileSync(secretsPath, JSON.stringify(vapidKeys, null, 2));
-            console.log('Generated new VAPID keys and saved to secrets file.');
+            console.log('Generated new VAPID keys and saved to file.');
         }
     } catch (error) {
         console.error('Error loading or generating VAPID keys:', error);
@@ -573,13 +631,120 @@ function sendNotification(messageAlarm, messageState, messageClass, countAlarm, 
 
 /** 
  * +------------------------------------
+ * | SETTINGS PAGE
+ * +------------------------------------
+*/ 
+
+// Endpoint to get settings
+app.get('/getSettings', (req, res) => {
+    res.json(settings);
+});
+
+// Endpoint to receive settings
+app.post('/setSettings', (req, res) => {
+    //Ports
+    const changePorts = req.body.ports.change_ports;
+    const httpPort = req.body.ports.http_port;
+    const httpsPort = req.body.ports.https_port;
+
+    //HTTPS
+    const disableHttp = req.body.https.disable_http;
+    const allowHttp = req.body.https.allow_http;
+
+    const generateCertificates = req.body.https.generate_certificates;
+    const commonName = req.body.https.common_name;
+    const alternativeName = req.body.https.alternative_name;
+    
+    const addCertificates = req.body.https.add_certificates;
+    const serverCert = req.body.https.server_cert;
+    const serverKey = req.body.https.server_key;
+
+    // Change ports
+    if(changePorts){
+        settings.ports.http_port = httpPort;
+        settings.ports.https_port = httpsPort;
+    }
+
+    //Disable HTTP
+    if(disableHttp){
+        settings.https.allow_http = allowHttp;
+    }
+
+    // Generate new HTTPS certificates
+    if(generateCertificates){
+        settings.https.common_name = commonName;
+        settings.https.alternative_names = alternativeName;
+
+        // Generate new certificates
+        generateSelfSignedCertificates()
+    }
+
+    // Add custom HTTPS certificates
+    if(addCertificates && serverCert && serverKey){
+        // Write the custom private key and certificate to the specified paths
+        fs.writeFileSync(privateKeyPath, serverKey);
+        fs.writeFileSync(certPath, serverCert);
+
+        console.log('Custom certificates written successfully.');
+    }
+
+    // Save changed settings to file
+    try {
+        fs.writeFileSync(filePath, JSON.stringify(settings, null, 2));
+        console.log("New settings saved to file successfully.");
+    } catch (err) {
+        console.error("Error saving new settings to file:", err);
+    }
+
+    res.status(201).json({ message: 'Settings received and changed.' });
+
+    //Restart servers
+    restartServers();
+});
+
+/** 
+ * +------------------------------------
  * | SARTING EXPRESS SERVER
  * +------------------------------------
 */ 
 
-// Start HTTP server on port 3777 and HTTPS server on port 3778
-app.listen(3777, () => console.log("HTTP server listening on port 3777."));
-https.createServer(httpsOptions, app).listen(3778, () => console.log('HTTPS server listening on port 3778.'));
+//Declare server
+let httpServer;
+let httpsServer;
+
+//Function to start http and https server
+function startServers() {
+    // Start server only if allowed by the settings
+    if(settings.https.allow_http){
+        // Start HTTP server
+        httpServer = app.listen(settings.ports.http_port, () => console.log("HTTP server startet on port:", settings.ports.http_port));    
+    }
+
+    // Start HTTPS server
+    httpsServer = https.createServer(httpsOptions, app).listen(settings.ports.https_port, () => console.log('HTTPS server startet on port:', settings.ports.https_port));
+}
+
+// Call the function to start the servers
+startServers();
+
+//Function to restart http and https server
+function restartServers() {
+    // Close exsisitng servers
+    if (httpServer) {
+        httpServer.close(() => {
+            console.log("HTTP server stopped.");
+        });
+    }
+
+    if (httpsServer) {
+        httpsServer.close(() => {
+            console.log("HTTPS server stopped.");
+        });
+    }
+
+    // Start new servers
+    startServers();
+}
 
 
 /** 

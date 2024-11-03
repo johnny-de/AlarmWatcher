@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AlarmWatcher</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+</head>
+<body>
+    <!-- Header with logo -->
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <img src="/logo.svg" alt="AlarmWatcher">
+            </div>
+        </div>
+    </header>
+
+    <!-- Buttons-->
+    <div class="filter-buttons">
+        <button id="save-button">Save & restart</button>
+        <button id="cancel-button">Cancel</button>
+    </div>
+
+     <!-- Settings -->
+     <div class="settings-container">
+        <div class="settings-wrapper">
+            <h2>Settings</h2>
+
+            <h3>Ports</h3>
+            <hr>
+
+            <!-- Checklist for setting custom ports -->
+            <label for="custom-ports" class="settings-label">
+                <input type="checkbox" id="custom-ports" name="" onclick="toggleOption('custom-ports-section')">
+                <b>Change ports</b>
+            </label>
+
+            <!-- Options related to setting custom ports -->
+            <div id="custom-ports-section" class="option-section">
+                <label for="common-name" class="settings-label">
+                    HTTP port:<br>
+                    <input type="number" id="http-port" name="http-port" placeholder="3777">
+                </label>
+                <br>
+                <label for="alternative-name" class="settings-label">
+                    HTTPS port:<br>
+                    <input type="number" id="https-port" name="https-port" placeholder="3778">
+                </label>
+            </div>
+
+            <hr>
+
+            <h3>HTTPS</h3>
+            <hr>
+
+            <!-- Checklist for disabeling HTTP -->
+            <label for="disable-https" class="settings-label">
+                <input type="checkbox" id="disable-http" name="disable-http" onclick="toggleOption('disable-http-section')">
+                <b>Enable or disable HTTP</b>
+            </label>
+
+            <!-- Options related to disabeling http -->
+            <div id="disable-http-section" class="option-section">
+                <label for="allow-http" class="settings-label">
+                    <input type="checkbox" id="allow-http" name="allow-http" checked>
+                    Allow HTTP
+                </label>
+            </div>
+
+            <hr>
+
+            <!-- Checklist for generate new certificates -->
+            <label for="generate-certificates" class="settings-label">
+                <input type="checkbox" id="generate-certificates" name="generate-certificates" onclick="toggleOption('generate-certificates-section')">
+                <b>Generate new HTTPS certificates</b>
+            </label>
+
+            <!-- Options related to generate new Certificates -->
+            <div id="generate-certificates-section" class="option-section">
+                <label for="common-name" class="settings-label">
+                    Common Name (CN) for certificate:<br>
+                    <input type="text" id="common-name" name="common-name" placeholder="localhost">
+                </label>
+                <br>
+                <label for="alternative-name" class="settings-label">
+                    Subject Alternative Names (SANs) for certificate:<br>
+                    <input type="text" id="alternative-name" name="alternative-name" placeholder="DNS:example.com, IP:192.168.0.100">
+                </label>
+            </div>
+
+            <hr>
+
+            <!-- Checklist for add custom certificates -->
+            <label for="add-certificates" class="settings-label">
+                <input type="checkbox" id="add-certificates" name="add-certificates" onclick="toggleOption('add-certificates-section')">
+                <b>Add custom HTTPS certificates</b>
+            </label>
+
+            <!-- Options related to add custom certificates -->
+            <div id="add-certificates-section" class="option-section">
+                <label for="server-cert" class="settings-label">
+                    server-cert.pem:<br>
+                    <textarea id="server-cert" name="server-cert" rows="10" placeholder="-----BEGIN CERTIFICATE-----&#13;&#10...&#13;&#10-----END CERTIFICATE-----"></textarea>
+                </label>
+                <br>
+                <label for="server-key" class="settings-label">
+                    server-key.pem:<br>
+                    <textarea id="server-key" name="server-key" rows="10" placeholder="-----BEGIN RSA PRIVATE KEY-----&#13;&#10...&#13;&#10-----END RSA PRIVATE KEY-----"></textarea>
+                </label>
+            </div>
+
+            <hr>
+        </div>
+    </div>
+
+    <script>
+        // Toggle visibility of settings sections
+        function toggleOption(sectionId) {
+            const section = document.getElementById(sectionId);
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Fetch settings from /getSettings and populate the form
+        function loadSettings() {
+            fetch('/getSettings')
+                .then(response => response.json())
+                .then(data => {
+                    // Populate
+                    document.getElementById("http-port").value = data.ports.http_port;
+                    document.getElementById("https-port").value = data.ports.https_port;
+
+                    document.getElementById("allow-http").checked = data.https.allow_http;
+
+                    document.getElementById("common-name").value = data.https.generate_certificates.common_name;
+                    document.getElementById("alternative-name").value = data.https.generate_certificates.alternative_names;
+                })
+                .catch(error => {
+                    console.error('Error loading settings:', error);
+                });
+        }
+
+        // Initialize sections and load settings on page load
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('generate-certificates-section').style.display = 'none';
+            document.getElementById('add-certificates-section').style.display = 'none';
+            document.getElementById('custom-ports-section').style.display = 'none';
+            document.getElementById('disable-http-section').style.display = 'none';
+
+            loadSettings(); // Load settings on page load
+
+            // Add event listeners for buttons
+            document.getElementById("cancel-button").addEventListener("click", handleCancel);
+            document.getElementById("save-button").addEventListener("click", handleSave);
+        });
+
+        // Function for "Cancel" button - Go back to the previous page
+        function handleCancel() {
+            window.location.href = window.location.origin + "/";
+        }
+
+        // Function for "Save" button - Collect data, send to /setSettings, then go back
+        function handleSave() {
+            // Gather all input data
+            const data = {
+                ports: {
+                    change_ports: document.getElementById("custom-ports").checked,
+                    http_port: document.getElementById("http-port").value,
+                    https_port: document.getElementById("https-port").value
+                },
+                https: {
+                    disable_http: document.getElementById("disable-http").checked,
+                    allow_http: document.getElementById("allow-http").checked,
+                    generate_certificates: document.getElementById("generate-certificates").checked,
+                    common_name: document.getElementById("common-name").value,
+                    alternative_name: document.getElementById("alternative-name").value,
+                    add_certificates: document.getElementById("add-certificates").checked,
+                    server_cert: document.getElementById("server-cert").value,
+                    server_key: document.getElementById("server-key").value
+                }
+            };
+
+            // Send data to /setSettings
+            fetch('/setSettings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                console.log('Trying to send settings:', data);
+                if (!response.ok) {
+                    throw new Error('Failed to save settings');
+                }
+                return response.json();
+            })
+            .then(() => {
+                // Go back to the main page upon successful save
+                window.location.href = window.location.origin + "/";
+            })
+            .catch(error => {
+                console.error('Error saving settings:', error);
+                alert('Failed to save settings. Please try again.');
+            });
+        }
+    </script>
+
+</body>
+</html>

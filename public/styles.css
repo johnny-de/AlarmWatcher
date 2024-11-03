@@ -12,6 +12,7 @@
     --color_orange: rgb(249, 115, 22);
     --color_light_orange: rgb(255, 228, 194);
     --color_gray: rgb(107, 114, 128);
+    --color_green: rgb(0, 205, 14);
     --color_midle_gray: rgb(128, 128, 128);
     --color_light_gray: rgb(239, 239, 239);
     --color_blue: rgb(68, 145, 239);
@@ -36,6 +37,7 @@ html {
         --color_orange: rgb(227, 115, 35);
         --color_light_orange: rgb(227, 115, 35);
         --color_gray: rgb(47, 47, 47);
+        --color_green: rgb(33, 167, 58);
         --color_midle_gray: rgb(33, 33, 33);
         --color_light_gray: rgb(47, 47, 47);
         --color_blue: rgb(47, 115, 199);
@@ -48,9 +50,11 @@ body {
     font-family: sans-serif;
     text-decoration: none;
     color: var(--color_text);
-    font-size: 16px;
+    font-size: 16px; /* Set a base font size */
     margin: 0;
     background-color: var(--color_background);
+    -webkit-text-size-adjust: 100%; /* Prevents text size adjustment on iOS */
+    text-size-adjust: 100%; /* For other browsers */
 }
 
 a {
@@ -107,6 +111,11 @@ header {
     border-radius: 10px;
     padding: 5px;
 }
+
+.nav-container hr {
+    margin: 3px;
+}
+
 
 .nav-container a {
     padding: 15px;
@@ -173,6 +182,68 @@ header {
     filter: brightness(0.4);
 }
 
+/* +++ Settings +++ */
+
+#cancel-button {
+    background-color: var(--color_gray);
+}
+
+#save-button {
+    background-color: var(--color_green);
+}
+
+.settings-container {
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    background-color: var(--color_table);
+    margin: 10px 25px;
+    padding: 5px;
+    max-width: calc(100vw - 20px);
+    overflow: hidden
+}
+
+.settings-wrapper {
+    padding: 0 20px 20px 20px;
+    max-width: calc(100vw - 30px);
+    overflow-x: auto;
+}
+
+textarea {
+    max-width: 600px;
+    width: calc(100vw - 150px);
+    resize: none;
+    margin: 10px 0;
+}
+
+input[type="text"] {
+    margin: 10px 0;
+    max-width: 300px;
+    width: calc(100vw - 150px);
+}
+
+input[type="number"] {
+    margin: 10px 0;
+    width: 100px;
+}
+
+input[type="checkbox"] {
+    margin: 10px;
+}
+
+.option-section input[type="checkbox"] {
+    margin: 10px 5px 10px 0 ;
+}
+
+hr {
+    border: none;
+    height: 1px;
+    background-color: var(--color_shadow);
+}
+
+.option-section {
+    margin: 10px 40px;
+}
+
 /* +++ Table +++ */
 
 .table-container {
@@ -180,7 +251,7 @@ header {
     box-shadow: var(--shadow);
     background-color: var(--color_table);
     margin: 10px 25px;
-    max-height: calc(100vh - 170px);
+    max-height: calc(100vh - 30px);
     overflow: hidden;
     padding: 5px;
 }
