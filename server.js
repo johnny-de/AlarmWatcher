@@ -640,6 +640,8 @@ app.get('/getSettings', (req, res) => {
 
 // Endpoint to receive settings
 app.post('/setSettings', (req, res) => {
+    res.status(201).json({ message: 'Settings received.' });
+
     //Ports
     const changePorts = req.body.ports.change_ports;
     const httpPort = req.body.ports.http_port;
@@ -693,8 +695,6 @@ app.post('/setSettings', (req, res) => {
     } catch (err) {
         console.error("Error saving new settings to file:", err);
     }
-
-    res.status(201).json({ message: 'Settings received and changed.' });
 
     //Restart servers
     restartServers();
