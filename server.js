@@ -87,6 +87,9 @@ function generateSelfSignedCertificates() {
         { name: 'commonName', value: settings.https.common_name }
     ];
 
+    console.log("commonName:", settings.https.common_name);
+    console.log("altNames:", altNames);
+
     // Define the options for the certificate generation
     const options = {
         keySize: 2048,                      // Increase key size to 2048 bits
@@ -720,6 +723,29 @@ app.post('/setSettings', (req, res) => {
 
     //Restart servers
     restartServers();
+});
+
+/** 
+ * +------------------------------------
+ * | ADDITIONAL ENDPOINTS
+ * +------------------------------------
+*/ 
+
+// Endpoint to serve the certificate content as text
+app.get('/getCert', (req, res) => {
+    const certPath = path.join(__dirname, 'data', 'server-cert.pem');
+
+    // Read the certificate file
+    fs.readFile(certPath, 'utf8', (err, data) => {
+        if (err) {
+            console.error('Error reading the certificate file:', err);
+            return res.status(404).send('Certificate file not found');
+        }
+        
+        // Send the content of the certificate file as plain text
+        res.type('text/plain'); // Set the response content type to plain text
+        res.send(data);
+    });
 });
 
 /** 
