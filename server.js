@@ -22,7 +22,7 @@ const { exec } = require('child_process');
  * +------------------------------------
 */ 
 
-const filePath = path.join(__dirname, 'secrets', 'settings.json');
+const filePath = path.join(__dirname, 'data', 'settings.json');
 
 // Define default JSON content
 const defaultSettings = {
@@ -72,7 +72,7 @@ const settings = loadOrCreateSettings();
 */ 
 
 // Define path and folder where SSL certificates will be stored
-const certFolder = path.join(__dirname, 'secrets');
+const certFolder = path.join(__dirname, 'data');
 const privateKeyPath = path.join(certFolder, 'server-key.pem');
 const certPath = path.join(certFolder, 'server-cert.pem');
 
@@ -96,10 +96,10 @@ function generateSelfSignedCertificates() {
 
 // Function to check if certificates exist and generate new ones if necessary
 function checkAndGenerateCertificates() {
-    // Ensure the secrets folder exists
+    // Ensure the data folder exists
     if (!fs.existsSync(certFolder)) {
-        fs.mkdirSync(certFolder, { recursive: true }); // Create secrets folder
-        console.log('secrets folder created.');
+        fs.mkdirSync(certFolder, { recursive: true }); // Create data folder
+        console.log('data folder created.');
     }
     // If the private key or certificate files don't exist, generate new certificates
     if (!fs.existsSync(privateKeyPath) || !fs.existsSync(certPath)) {
@@ -166,7 +166,7 @@ app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs, swaggerUiOpti
 */ 
 
 // Define path and folder for the database
-const dbFolder = path.join(__dirname, 'db');
+const dbFolder = path.join(__dirname, 'data');
 const dbPath = path.join(dbFolder, 'alarms.db');
 
 // Ensure the db folder exists
@@ -527,22 +527,22 @@ app.get('/api/getAlarms', (req, res) => {
 app.use(bodyParser.json());
 
 // Path to the VAPID keys file
-const secretsPath = path.join(__dirname, 'secrets', 'vapid.json');
+const dataPath = path.join(__dirname, 'data', 'vapid.json');
 let vapidKeys;
  
 // Function to load or generate VAPID keys
 function loadOrGenerateVapidKeys() {
     try {
         // Check if the VAPID keys file exists
-        if (fs.existsSync(secretsPath)) {
+        if (fs.existsSync(dataPath)) {
             // Read and parse the VAPID keys from the JSON file
-            const data = fs.readFileSync(secretsPath, 'utf8');
+            const data = fs.readFileSync(dataPath, 'utf8');
             vapidKeys = JSON.parse(data);
             console.log('Loaded VAPID keys from file.');
         } else {
             // Generate VAPID keys if the file does not exist
             vapidKeys = webPush.generateVAPIDKeys();
-            fs.writeFileSync(secretsPath, JSON.stringify(vapidKeys, null, 2));
+            fs.writeFileSync(dataPath, JSON.stringify(vapidKeys, null, 2));
             console.log('Generated new VAPID keys and saved to file.');
         }
     } catch (error) {
@@ -570,7 +570,7 @@ app.get('/vapidPublicKey', (req, res) => {
 let subscriptions = [];
 
 // File path for storing subscriptions
-const subscriptionsFilePath = path.join(__dirname, 'secrets', 'subscriptions.json');
+const subscriptionsFilePath = path.join(__dirname, 'data', 'subscriptions.json');
 
 // Load subscriptions from the file when the server starts
 const loadSubscriptions = () => {
