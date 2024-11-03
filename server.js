@@ -33,7 +33,7 @@ const defaultSettings = {
   https: {
     allow_http: true,
     common_name: "localhost",
-    alternative_names: "DNS:example.com, IP:192.168.0.100",
+    alternative_names: "example.com, example.org",
   },
 };
 
@@ -76,20 +76,42 @@ const certPath = path.join(certFolder, 'server-cert.pem');
 
 // Generate self-signed certificates
 function generateSelfSignedCertificates() {
+    // Parse the altNamesString into an array of objects
+    const altNames = settings.https.alternative_names.split(',').map(name => ({
+        type: 2, // type 2 for DNS names
+        value: name.trim() // Trim whitespace from each name
+    }));
+
     // Define attributes for the certificate
     const attrs = [
-        { name: 'commonName', value: settings.https.common_name }, 
-        { name: 'subjectAltName', value: settings.https.alternative_names }
+        { name: 'commonName', value: settings.https.common_name }
     ];
-    
-    // Generate self-signed certificates valid for 10 years (3650 days)
-    const pems = selfsigned.generate(attrs, { days: 3650 });
-    
+
+    // Define the options for the certificate generation
+    const options = {
+        keySize: 2048,                      // Increase key size to 2048 bits
+        days: 3650,                         // Valid for 10 year
+        algorithm: 'sha256',                // Use SHA-256 instead of SHA-1
+        extensions: [
+            {
+                name: 'subjectAltName',     // Add Subject Alternative Name (SAN)
+                altNames: altNames          // Use the parsed altNames array
+            },
+            {
+                name: 'extKeyUsage',        // Specify Extended Key Usage (EKU)
+                serverAuth: true            // TLS Web Server Authentication
+            }
+        ]
+    };
+
+    // Generate self-signed certificate with updated options
+    const pems = selfsigned.generate(attrs, options);
+
     // Write the generated private key and certificate to the specified paths
     fs.writeFileSync(privateKeyPath, pems.private);
     fs.writeFileSync(certPath, pems.cert);
 
-    console.log('Self-signed certificates created successfully (valid for 10 years).');
+    console.log('Self-signed HTTPS certificates created successfully, valid for days:', options.days);
 }
 
 // Function to check if certificates exist and generate new ones if necessary
@@ -101,11 +123,11 @@ function checkAndGenerateCertificates() {
     }
     // If the private key or certificate files don't exist, generate new certificates
     if (!fs.existsSync(privateKeyPath) || !fs.existsSync(certPath)) {
-        console.log('Certificates not found, generating new ones...');
+        console.log('HTTPS Certificates not found, generating new ones...');
         generateSelfSignedCertificates();
     } else {
         // If the certificates already exist, log a message
-        console.log('Certificates already exist.');
+        console.log('HTTPS Certificates already exist.');
     }
 }
 
@@ -198,7 +220,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
             if (err) {
                 console.log("Error creating table: " + err.message);
             } else {
-                console.log("Alarms table created successfully.");
+                console.log("Alarms table in database created successfully.");
             }
         });
     }
@@ -536,12 +558,12 @@ function loadOrGenerateVapidKeys() {
             // Read and parse the VAPID keys from the JSON file
             const data = fs.readFileSync(dataPath, 'utf8');
             vapidKeys = JSON.parse(data);
-            console.log('Loaded VAPID keys from file.');
+            console.log('Loaded VAPID keys for notification handling from file.');
         } else {
             // Generate VAPID keys if the file does not exist
             vapidKeys = webPush.generateVAPIDKeys();
             fs.writeFileSync(dataPath, JSON.stringify(vapidKeys, null, 2));
-            console.log('Generated new VAPID keys and saved to file.');
+            console.log('Generated new VAPID keys for notification handling and saved to file.');
         }
     } catch (error) {
         console.error('Error loading or generating VAPID keys:', error);

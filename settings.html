@@ -85,8 +85,8 @@
                 </label>
                 <br>
                 <label for="alternative-name" class="settings-label">
-                    Subject Alternative Names (SANs) for certificate:<br>
-                    <input type="text" id="alternative-name" name="alternative-name" placeholder="DNS:example.com, IP:192.168.0.100">
+                    Subject Alternative Names (SANs) for certificate (DNS only):<br>
+                    <input type="text" id="alternative-name" name="alternative-name" placeholder="example.com, example.org">
                 </label>
             </div>
 
@@ -189,21 +189,9 @@
                 },
                 body: JSON.stringify(data)
             })
-            .then(response => {
-                console.log('Trying to send settings:', data);
-                if (!response.ok) {
-                    throw new Error('Failed to save settings');
-                }
-                return response.json();
-            })
-            .then(() => {
-                // Go back to the main page upon successful save
-                window.location.href = window.location.origin + "/";
-            })
-            .catch(error => {
-                console.error('Error saving settings:', error);
-                alert('Failed to save settings. Please try again.');
-            });
+
+            // Go back to the main page upon successful save
+            window.location.href = window.location.origin + "/";
         }
     </script>
 
