@@ -32,10 +32,8 @@ const defaultSettings = {
   },
   https: {
     allow_http: true,
-    generate_certificates: {
-      common_name: "localhost",
-      alternative_names: "DNS:example.com, IP:192.168.0.100",
-    },
+    common_name: "localhost",
+    alternative_names: "DNS:example.com, IP:192.168.0.100",
   },
 };
 
