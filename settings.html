@@ -133,8 +133,8 @@
 
                     document.getElementById("allow-http").checked = data.https.allow_http;
 
-                    document.getElementById("common-name").value = data.https.generate_certificates.common_name;
-                    document.getElementById("alternative-name").value = data.https.generate_certificates.alternative_names;
+                    document.getElementById("common-name").value = data.https.common_name;
+                    document.getElementById("alternative-name").value = data.https.alternative_names;
                 })
                 .catch(error => {
                     console.error('Error loading settings:', error);
