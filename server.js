@@ -740,6 +740,12 @@ app.post('/setSettings', (req, res) => {
         fs.writeFileSync(privateKeyPath, serverKey);
         fs.writeFileSync(certPath, serverCert);
 
+        // Set certificates
+        httpsOptions = {
+            key: serverCert,
+            cert: serverKey
+        };
+
         console.log('Custom certificates written successfully.');
     }
 
