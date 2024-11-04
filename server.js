@@ -69,6 +69,8 @@ const settings = loadOrCreateSettings();
  * +------------------------------------
 */ 
 
+let httpsOptions;
+
 // Define path and folder where SSL certificates will be stored
 const certFolder = path.join(__dirname, 'data');
 const privateKeyPath = path.join(certFolder, 'server-key.pem');
@@ -76,33 +78,36 @@ const certPath = path.join(certFolder, 'server-cert.pem');
 
 // Generate self-signed certificates
 function generateSelfSignedCertificates() {
-    // Parse the altNamesString into an array of objects
-    const altNames = settings.https.alternative_names.split(',').map(name => ({
-        type: 2, // type 2 for DNS names
-        value: name.trim() // Trim whitespace from each name
-    }));
+    // Define CN from settings
+    const commonName = settings.https.common_name;
 
+    // Parse the altNamesString into an array of objects
+    const altNames = [
+        { type: 2, value: commonName },  // Add CN as the first SAN entry
+        ...settings.https.alternative_names.split(',').map(name => ({
+            type: 2, // type 2 for DNS names
+            value: name.trim() // Trim whitespace from each name
+        }))
+    ];
+    
     // Define attributes for the certificate
     const attrs = [
-        { name: 'commonName', value: settings.https.common_name }
+        { name: 'commonName', value: commonName }
     ];
-
-    console.log("commonName:", settings.https.common_name);
-    console.log("altNames:", altNames);
 
     // Define the options for the certificate generation
     const options = {
-        keySize: 2048,                      // Increase key size to 2048 bits
-        days: 3650,                         // Valid for 10 year
-        algorithm: 'sha256',                // Use SHA-256 instead of SHA-1
+        keySize: 2048,                                  // Increase key size to 2048 bits
+        days: 3650,                                     // Valid for 10 year
+        algorithm: 'sha256',                            // Use SHA-256 instead of SHA-1
         extensions: [
             {
-                name: 'subjectAltName',     // Add Subject Alternative Name (SAN)
-                altNames: altNames          // Use the parsed altNames array
+                name: 'subjectAltName',                 // Add Subject Alternative Name (SAN)
+                altNames: altNames                      // Use the parsed altNames array
             },
             {
-                name: 'extKeyUsage',        // Specify Extended Key Usage (EKU)
-                serverAuth: true            // TLS Web Server Authentication
+                name: 'extKeyUsage',                    // Specify Extended Key Usage (EKU)
+                serverAuth: true                        // TLS Web Server Authentication
             }
         ]
     };
@@ -113,6 +118,12 @@ function generateSelfSignedCertificates() {
     // Write the generated private key and certificate to the specified paths
     fs.writeFileSync(privateKeyPath, pems.private);
     fs.writeFileSync(certPath, pems.cert);
+
+    // Set certificates
+    httpsOptions = {
+        key: pems.private,
+        cert: pems.cert
+    };
 
     console.log('Self-signed HTTPS certificates created successfully, valid for days:', options.days);
 }
@@ -131,17 +142,17 @@ function checkAndGenerateCertificates() {
     } else {
         // If the certificates already exist, log a message
         console.log('HTTPS Certificates already exist.');
+
+        // Load certificates
+        httpsOptions = {
+            key: fs.readFileSync(privateKeyPath),
+            cert: fs.readFileSync(certPath)
+        };
     }
 }
 
 // Call the function to check for and generate certificates if needed
 checkAndGenerateCertificates();
-
-// HTTPS options (certificates)
-const httpsOptions = {
-    key: fs.readFileSync(privateKeyPath),
-    cert: fs.readFileSync(certPath)
-};
 
 /** 
  * +------------------------------------
