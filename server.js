@@ -76,19 +76,37 @@ const certFolder = path.join(__dirname, 'data');
 const privateKeyPath = path.join(certFolder, 'server-key.pem');
 const certPath = path.join(certFolder, 'server-cert.pem');
 
+// Import a regular expression to check for IP addresses
+const isIpAddress = (value) => /^(\d{1,3}\.){3}\d{1,3}$/.test(value);
+
 // Generate self-signed certificates
 function generateSelfSignedCertificates() {
     // Define CN from settings
     const commonName = settings.https.common_name;
 
-    // Parse the altNamesString into an array of objects
-    const altNames = [
-        { type: 2, value: commonName },  // Add CN as the first SAN entry
-        ...settings.https.alternative_names.split(',').map(name => ({
-            type: 2, // type 2 for DNS names
-            value: name.trim() // Trim whitespace from each name
-        }))
-    ];
+    // Initialize altNames array with CN as the first SAN entry
+    const altNames = [];
+
+    // Check if the commonName is an IP address or a DNS name
+    if (isIpAddress(commonName)) {
+        altNames.push({ type: 7, ip: commonName });  // IP type for IP address CN
+    } else {
+        altNames.push({ type: 2, value: commonName }); // DNS type for domain CN
+    }
+
+    // If alternative names are provided and not empty, parse and add them to altNames
+    if (settings.https.alternative_names) {
+        const additionalNames = settings.https.alternative_names.split(',').map(name => {
+            const trimmedName = name.trim();
+            // Check if the entry is an IP address or DNS name
+            if (isIpAddress(trimmedName)) {
+                return { type: 7, ip: trimmedName };  // IP type for IP addresses
+            } else {
+                return { type: 2, value: trimmedName }; // DNS type for DNS names
+            }
+        });
+        altNames.push(...additionalNames); // Add additional SANs to altNames
+    }
     
     // Define attributes for the certificate
     const attrs = [
@@ -98,7 +116,7 @@ function generateSelfSignedCertificates() {
     // Define the options for the certificate generation
     const options = {
         keySize: 2048,                                  // Increase key size to 2048 bits
-        days: 3650,                                     // Valid for 10 year
+        days: 3650,                                     // Valid for 10 years
         algorithm: 'sha256',                            // Use SHA-256 instead of SHA-1
         extensions: [
             {
@@ -127,6 +145,7 @@ function generateSelfSignedCertificates() {
 
     console.log('Self-signed HTTPS certificates created successfully, valid for days:', options.days);
 }
+
 
 // Function to check if certificates exist and generate new ones if necessary
 function checkAndGenerateCertificates() {

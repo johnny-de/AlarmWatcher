@@ -74,19 +74,19 @@
             <!-- Checklist for generate new certificates -->
             <label for="generate-certificates" class="settings-label">
                 <input type="checkbox" id="generate-certificates" name="generate-certificates" onclick="toggleOption('generate-certificates-section')">
-                <b>Generate new HTTPS certificates</b>
+                <b>Generate new SSL certificates</b>
             </label>
 
             <!-- Options related to generate new Certificates -->
             <div id="generate-certificates-section" class="option-section">
                 <label for="common-name" class="settings-label">
-                    Common Name (CN) for certificate:<br>
+                    CN for certificate:<br>
                     <input type="text" id="common-name" name="common-name" placeholder="localhost">
                 </label>
                 <br>
                 <label for="alternative-name" class="settings-label">
-                    Subject Alternative Names (SANs) for certificate (DNS only):<br>
-                    <input type="text" id="alternative-name" name="alternative-name" placeholder="example.com, example.org">
+                    SANs for certificate:<br>
+                    <input type="text" id="alternative-name" name="alternative-name" placeholder="example.com, 192.168.0.10">
                 </label>
             </div>
 
@@ -95,18 +95,18 @@
             <!-- Checklist for add custom certificates -->
             <label for="add-certificates" class="settings-label">
                 <input type="checkbox" id="add-certificates" name="add-certificates" onclick="toggleOption('add-certificates-section')">
-                <b>Add custom HTTPS certificates</b>
+                <b>Add custom SSL certificate</b>
             </label>
 
             <!-- Options related to add custom certificates -->
             <div id="add-certificates-section" class="option-section">
                 <label for="server-cert" class="settings-label">
-                    server-cert.pem:<br>
+                    SSL/TLS certificate:<br>
                     <textarea id="server-cert" name="server-cert" rows="10" placeholder="-----BEGIN CERTIFICATE-----&#13;&#10...&#13;&#10-----END CERTIFICATE-----"></textarea>
                 </label>
                 <br>
                 <label for="server-key" class="settings-label">
-                    server-key.pem:<br>
+                    SSL/TLS private key:<br>
                     <textarea id="server-key" name="server-key" rows="10" placeholder="-----BEGIN RSA PRIVATE KEY-----&#13;&#10...&#13;&#10-----END RSA PRIVATE KEY-----"></textarea>
                 </label>
             </div>
