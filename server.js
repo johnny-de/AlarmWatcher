@@ -1,5 +1,15 @@
 /** 
  * +------------------------------------
+ * | AlarmWatcher
+ * | johhny-de
+ * | https://github.com/johnny-de/alarmwatcher/
+ * +------------------------------------
+*/ 
+
+const version = 'v1.0.3';
+
+/** 
+ * +------------------------------------
  * | IMPORTING MODULES
  * +------------------------------------
 */ 
@@ -766,6 +776,11 @@ app.post('/setSettings', (req, res) => {
  * | ADDITIONAL ENDPOINTS
  * +------------------------------------
 */ 
+
+// Endpoint to get settings
+app.get('/getVersion', (req, res) => {
+    res.send(version);
+});
 
 // Endpoint to serve the certificate content as text
 app.get('/getCert', (req, res) => {

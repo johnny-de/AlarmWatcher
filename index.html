@@ -27,7 +27,8 @@
                 <a href="/settings"><b>Settings</b></a><hr>
                 <a href="/api-docs" target="_blank"><b>API Docs</b></a><hr>
                 <a href="https://github.com/johnny-de/alarmwatcher/wiki" target="_blank"><b>Help</b></a><hr>
-                <a href="https://github.com/johnny-de/alarmwatcher" target="_blank"><b>GitHub</b></a>
+                <a href="https://github.com/johnny-de/alarmwatcher" target="_blank"><b>GitHub</b></a><hr>
+                <a id="version">Loading version...</a>
             </div>
         </div>
     </header>
@@ -84,6 +85,17 @@
                 navLinks.style.display = "none";
                 isNavOpen = false;
             }
+        });
+
+        // Fetch version from /getVersion endpoint and update the version element
+        fetch('/getVersion')
+        .then(response => response.text())
+        .then(version => {
+            document.getElementById('version').textContent = version;
+        })
+        .catch(error => {
+            console.error('Error fetching version:', error);
+            document.getElementById('version').textContent = 'Version unavailable...';
         });
 
         // API endpoint for alarms
