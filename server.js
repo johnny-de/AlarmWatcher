@@ -33,7 +33,7 @@ const defaultSettings = {
   https: {
     allow_http: true,
     common_name: "localhost",
-    alternative_names: "example.com, example.org",
+    alternative_names: "example.com, 93.184.215.14",
   },
 };
 
