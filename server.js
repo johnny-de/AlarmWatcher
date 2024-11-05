@@ -1,17 +1,17 @@
 /** 
- * +------------------------------------
+ * +----------------------------------------------
  * | AlarmWatcher
  * | johhny-de
  * | https://github.com/johnny-de/alarmwatcher/
- * +------------------------------------
+ * +----------------------------------------------
 */ 
 
-const version = 'v1.0.3';
+const version = 'v1.0.4';
 
 /** 
- * +------------------------------------
+ * +----------------------------------------------
  * | IMPORTING MODULES
- * +------------------------------------
+ * +----------------------------------------------
 */ 
 
 const express = require('express');
@@ -27,9 +27,9 @@ const bodyParser = require('body-parser');
 const { exec } = require('child_process');
 
 /** 
- * +------------------------------------
+ * +----------------------------------------------
  * | LOAD SETTINGS
- * +------------------------------------
+ * +----------------------------------------------
 */ 
 
 const filePath = path.join(__dirname, 'data', 'settings.json');
@@ -74,9 +74,9 @@ function loadOrCreateSettings() {
 const settings = loadOrCreateSettings();
 
 /** 
- * +------------------------------------
+ * +----------------------------------------------
  * | HTTPS HANDLING
- * +------------------------------------
+ * +----------------------------------------------
 */ 
 
 let httpsOptions;
@@ -85,9 +85,19 @@ let httpsOptions;
 const certFolder = path.join(__dirname, 'data');
 const privateKeyPath = path.join(certFolder, 'server-key.pem');
 const certPath = path.join(certFolder, 'server-cert.pem');
+const certDerPath = path.join(certFolder, 'server-cert.der'); // DER path
 
 // Import a regular expression to check for IP addresses
 const isIpAddress = (value) => /^(\d{1,3}\.){3}\d{1,3}$/.test(value);
+
+// Function to convert PEM to DER format
+function convertPemToDer(pemFilePath, derFilePath) {
+    const pemData = fs.readFileSync(pemFilePath, 'utf8');
+    const derData = Buffer.from(pemData.replace(/-----BEGIN CERTIFICATE-----/g, '')
+        .replace(/-----END CERTIFICATE-----/g, '')
+        .replace(/\n/g, ''), 'base64');
+    fs.writeFileSync(derFilePath, derData);
+}
 
 // Generate self-signed certificates
 function generateSelfSignedCertificates() {
@@ -130,6 +140,10 @@ function generateSelfSignedCertificates() {
         algorithm: 'sha256',                            // Use SHA-256 instead of SHA-1
         extensions: [
             {
+                name: 'basicConstraints',               // Add Basic Constraints
+                cA: true,                               // Indicate this is a CA
+            },
+            {
                 name: 'subjectAltName',                 // Add Subject Alternative Name (SAN)
                 altNames: altNames                      // Use the parsed altNames array
             },
@@ -147,6 +161,9 @@ function generateSelfSignedCertificates() {
     fs.writeFileSync(privateKeyPath, pems.private);
     fs.writeFileSync(certPath, pems.cert);
 
+    // Convert the PEM certificate to DER format
+    convertPemToDer(certPath, certDerPath);
+
     // Set certificates
     httpsOptions = {
         key: pems.private,
@@ -154,8 +171,8 @@ function generateSelfSignedCertificates() {
     };
 
     console.log('Self-signed HTTPS certificates created successfully, valid for days:', options.days);
+    console.log('DER certificate generated at:', certDerPath);
 }
-
 
 // Function to check if certificates exist and generate new ones if necessary
 function checkAndGenerateCertificates() {
@@ -165,7 +182,7 @@ function checkAndGenerateCertificates() {
         console.log('data folder created.');
     }
     // If the private key or certificate files don't exist, generate new certificates
-    if (!fs.existsSync(privateKeyPath) || !fs.existsSync(certPath)) {
+    if (!fs.existsSync(privateKeyPath) || !fs.existsSync(certPath) || !fs.existsSync(certDerPath)) {
         console.log('HTTPS Certificates not found, generating new ones...');
         generateSelfSignedCertificates();
     } else {
@@ -184,9 +201,9 @@ function checkAndGenerateCertificates() {
 checkAndGenerateCertificates();
 
 /** 
- * +------------------------------------
+ * +----------------------------------------------
  * | EXPRESS DEFINITION
- * +------------------------------------
+ * +----------------------------------------------
 */ 
 
 // Create express application
@@ -196,9 +213,9 @@ const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 
 /** 
- * +------------------------------------
+ * +----------------------------------------------
  * | SWAGGER DEFINITION
- * +------------------------------------
+ * +----------------------------------------------
 */ 
 
 // Create swagger options
@@ -223,9 +240,9 @@ const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs, swaggerUiOptions));
 
 /** 
- * +------------------------------------
+ * +----------------------------------------------
  * | DB HANDLING
- * +------------------------------------
+ * +----------------------------------------------
 */ 
 
 // Define path and folder for the database
@@ -270,9 +287,9 @@ const db = new sqlite3.Database(dbPath, (err) => {
 });
 
 /** 
- * +------------------------------------
+ * +----------------------------------------------
  * | FRONTEND
- * +------------------------------------
+ * +----------------------------------------------
 */ 
 
 app.get('/', (req, res) => {
@@ -286,9 +303,9 @@ app.get('/settings', (req, res) => {
 });
 
 /** 
- * +------------------------------------
+ * +----------------------------------------------
  * | API
- * +------------------------------------
+ * +----------------------------------------------
 */ 
 
 /**
@@ -582,9 +599,9 @@ app.get('/api/getAlarms', (req, res) => {
 });
 
 /** 
- * +------------------------------------
+ * +----------------------------------------------
  * | NOTIFICATION HANDLING
- * +------------------------------------
+ * +----------------------------------------------
 */ 
 
 app.use(bodyParser.json());
@@ -693,9 +710,9 @@ function sendNotification(messageAlarm, messageState, messageClass, countAlarm, 
 }
 
 /** 
- * +------------------------------------
+ * +----------------------------------------------
  * | SETTINGS PAGE
- * +------------------------------------
+ * +----------------------------------------------
 */ 
 
 // Endpoint to get settings
@@ -772,9 +789,9 @@ app.post('/setSettings', (req, res) => {
 });
 
 /** 
- * +------------------------------------
+ * +----------------------------------------------
  * | ADDITIONAL ENDPOINTS
- * +------------------------------------
+ * +----------------------------------------------
 */ 
 
 // Endpoint to get settings
@@ -782,8 +799,8 @@ app.get('/getVersion', (req, res) => {
     res.send(version);
 });
 
-// Endpoint to serve the certificate content as text
-app.get('/getCert', (req, res) => {
+// Endpoint to serve the PEM certificate content as text
+app.get('/cert/getPEM', (req, res) => {
     const certPath = path.join(__dirname, 'data', 'server-cert.pem');
 
     // Read the certificate file
@@ -799,10 +816,23 @@ app.get('/getCert', (req, res) => {
     });
 });
 
+// Endpoint to serve the CERT certificate file for download
+app.get('/cert/getDER', (req, res) => {
+    const certPath = path.join(__dirname, 'data', 'server-cert.der');
+    
+    // Send the certificate file as an attachment
+    res.sendFile(certPath, { headers: { 'Content-Disposition': 'attachment; filename="server-cert.der"' } }, (err) => {
+        if (err) {
+            console.error('Error sending the certificate file:', err);
+            res.status(err.status).send('Error sending the file');
+        }
+    });
+});
+
 /** 
- * +------------------------------------
+ * +----------------------------------------------
  * | SARTING EXPRESS SERVER
- * +------------------------------------
+ * +----------------------------------------------
 */ 
 
 //Declare server
@@ -845,9 +875,9 @@ function restartServers() {
 
 
 /** 
- * +------------------------------------
+ * +----------------------------------------------
  * | HANDLING AUTO DELETION
- * +------------------------------------
+ * +----------------------------------------------
 */ 
 
 // Function to delete alarms with past delete_time
@@ -869,3 +899,24 @@ function deleteExpiredAlarms() {
 // Set an interval to check and delete expired alarms every second
 setInterval(deleteExpiredAlarms, 1000);  // 1000ms = 1 second
 
+/** 
+ * +----------------------------------------------
+ * | GRACEFUL SHUTDOWN FOR DOCKER CONTAINER
+ * +----------------------------------------------
+*/ 
+
+process.on('SIGTERM', () => {
+    console.log('Received SIGTERM, shutting down gracefully...');
+    db.close(() => {
+        console.log('Closed the database connection.');
+        process.exit(0); // Exit with code 0 to signal a clean exit
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('Received SIGINT, shutting down gracefully...');
+    db.close(() => {
+        console.log('Closed the database connection.');
+        process.exit(0); // Exit with code 0 to signal a clean exit
+    });
+});

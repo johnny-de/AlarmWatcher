@@ -98,7 +98,7 @@ The third major release (v1.2.0) will focus on building a comprehensive alarm hi
 ### Future milestones
 
 Beyond the core milestones for AlarmWatcher, additional features and extensions are planned to broaden the system's reach and usability.
-- **Open-source android app:** Develop and release an open-source Android app that allows users to view alarms and receive push notifications on their mobile devices.
+- **Open-source app:** Develop and release an open-source  app that allows users to view alarms and receive push notifications on their mobile devices.
 - **Node-RED integration:** Create AlarmWatcher nodes for Node-RED.
 - **Home Assistant integration:** Develop an integration with Home Assistant.
 - **Uptime Kuma integration:** Implement an integration with Uptime Kuma.
