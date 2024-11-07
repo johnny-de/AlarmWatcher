@@ -94,7 +94,7 @@
                 const httpsPort = data.ports.https_port;
                 const baseUrl = window.location.hostname;
                 const fullUrl = `https://${baseUrl}:${httpsPort}`;
-                document.getElementById("alarmwatcher-link").innerHTML = `Open the AlarmWatcher web page at <a href="${fullUrl}" target="_blank">${fullUrl}</a>.`;
+                document.getElementById("alarmwatcher-link").innerHTML = `Open the AlarmWatcher web page at <a href="${fullUrl}">${fullUrl}</a>.`;
             } catch (error) {
                 console.error("Error fetching AlarmWatcher settings:", error);
             }
@@ -214,13 +214,22 @@
         const enableButton = document.getElementById('enable-notifications-button');
 
         if (!('serviceWorker' in navigator && 'PushManager' in window)) {
-            console.log('Push messaging is not supported in this browser.');
-            notificationStatusMessage.innerHTML = 'Push messaging is not supported.';
+            console.log('Push messaging is not supported by the browser.');
+            notificationStatusMessage.innerHTML = 'Push messaging is not supported by the browser. Make sure you are using a secure and trusted connection.';
             notificationStatusMessage.style.color = 'red';
+            enableButton.disabled = true;
             return;
         }
 
-        // Check current notification permission state without prompting the user
+        // Check if the connection is secure (HTTPS)
+        if (window.location.protocol !== 'https:') {
+            console.log('Connection is not secure. Notifications will not work.');
+            notificationStatusMessage.innerHTML = 'Notifications require a secure and trusted connection (see step 2)';
+            notificationStatusMessage.style.color = 'red';
+            enableButton.disabled = true;
+            return;
+        }
+        
         if (Notification.permission === 'denied') {
             notificationStatusMessage.innerHTML = 'Notifications are not allowed. Please allow notifications in your browser.';
             notificationStatusMessage.style.color = 'red';
@@ -244,7 +253,7 @@
             }).catch(function(error) {
                 console.error('Error checking service worker subscription:', error);
             });
-        }
+        }     
     }
 
     // Function to check if the app is installed as a PWA

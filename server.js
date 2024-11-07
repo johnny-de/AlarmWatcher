@@ -686,8 +686,8 @@ app.post('/subscribe', (req, res) => {
         saveSubscriptions();
     }
 
-    // Ensure subscriptions array never exceeds 100 entries
-    if (subscriptions.length > 100) {
+    // Ensure subscriptions array never exceeds 1000 entries
+    if (subscriptions.length > 1000) {
         subscriptions.shift(); // Remove the oldest subscription (first entry)
     }
 
