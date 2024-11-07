@@ -244,6 +244,13 @@ hr {
     margin: 10px 40px;
 }
 
+/* +++ Features +++ */
+
+#alarmwatcher-link a {
+    color: blue;
+    text-decoration: underline;
+}
+
 /* +++ Table +++ */
 
 .table-container {

@@ -1,5 +1,3 @@
-// service-worker.js
-
 // Cache names
 const CACHE_NAME = 'my-app-cache-v1';
 const URLS_TO_CACHE = [
@@ -20,6 +18,19 @@ self.addEventListener('install', event => {
                 console.log('Caching app shell');
                 return cache.addAll(URLS_TO_CACHE);
             })
+            .catch(error => {
+                console.error('Failed to cache resources during install:', error);
+            })
+    );
+    // Force waiting service worker to become active
+    self.skipWaiting();
+});
+
+// Activate event to take control of all clients
+self.addEventListener('activate', event => {
+    console.log('Activating new service worker');
+    event.waitUntil(
+        self.clients.claim()  // Ensures the service worker takes control of open pages
     );
 });
 
@@ -30,6 +41,10 @@ self.addEventListener('fetch', event => {
             .then(response => {
                 // If there's a cached response, return it; otherwise fetch from the network
                 return response || fetch(event.request);
+            })
+            .catch(error => {
+                console.error('Failed to fetch resource:', error);
+                return fetch(event.request);  // Fallback to network in case of error
             })
     );
 });

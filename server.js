@@ -302,6 +302,11 @@ app.get('/settings', (req, res) => {
     return res.status(200).sendFile(__dirname + '/settings.html');
 });
 
+app.get('/features', (req, res) => {
+    // Return index.html
+    return res.status(200).sendFile(__dirname + '/features.html');
+});
+
 /** 
  * +----------------------------------------------
  * | API

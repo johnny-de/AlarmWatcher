@@ -28,6 +28,7 @@
             <!-- Navigation links (hidden by default) -->
             <div id="nav-links">
                 <a href="/settings"><b>Settings</b></a><hr>
+                <a href="/features"><b>Features</b></a><hr>
                 <a href="/api-docs" target="_blank"><b>API Docs</b></a><hr>
                 <a href="https://github.com/johnny-de/alarmwatcher/wiki" target="_blank"><b>Help</b></a><hr>
                 <a href="https://github.com/johnny-de/alarmwatcher" target="_blank"><b>GitHub</b></a><hr>
@@ -306,120 +307,7 @@
                 console.error('Error deleting alarm:', error);
             }
         }
-
-        // Check if the browser supports Service Workers and Push API
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-            // Register the service worker (service-worker.js) to handle background tasks
-            navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
-                // Request the user's permission to show notifications
-                Notification.requestPermission().then(function(permission) {
-                    // Check if permission was granted
-                    if (permission === 'granted') {
-                        // Subscribe user
-                        subscribeUser(registration);
-                    } else {
-                        console.log('User denied notifications.');
-                    }
-                });
-
-                // Function to subscribe the user to push notifications
-                function subscribeUser(registration) {
-                    // Fetch the server's public VAPID key
-                    fetch('/vapidPublicKey')
-                    .then(response => response.json())
-                    .then(data => {
-                        const applicationServerKey = urlBase64ToUint8Array(data.publicKey); // Convert public key to UInt8Array
-
-                        // Try subscribing the user to the push service
-                        registration.pushManager.subscribe({
-                            userVisibleOnly: true, // Ensures that the notification will always require user interaction
-                            applicationServerKey: applicationServerKey // Used for authenticating the subscription
-                        })
-                        .then(function(subscription) {
-                            // Subscription succeeded, log and send to server
-                            console.log('User subscribed successfully:', subscription);
-                            sendSubscriptionToServer(subscription);
-                        })
-                        .catch(function(error) {
-                            // If subscription fails, try to unsubscribe first and retry subscription
-                            console.error('Failed to subscribe the user, attempting to unsubscribe:', error);
-                            registration.pushManager.getSubscription().then(function(existingSubscription) {
-                                if (existingSubscription) {
-                                    // Unsubscribe the user
-                                    unsubscribeUser(existingSubscription, registration);
-                                }
-                            }).catch(function(unsubError) {
-                                console.error('Error during unsubscribe attempt:', unsubError);
-                            });
-                        });
-                    })
-                    .catch(function(error) {
-                        console.error('Error fetching public VAPID key:', error);
-                    });
-                }
-
-                // Function to unsubscribe the user from push notifications and retry subscription
-                function unsubscribeUser(subscription, registration) {
-                    subscription.unsubscribe().then(function(success) {
-                        if (success) {
-                            console.log('User successfully unsubscribed. Retrying subscription.');
-                            // After successful unsubscribe, try subscribing again
-                            subscribeUser(registration);
-                        } else {
-                            console.log('Failed to unsubscribe the user.');
-                        }
-                    }).catch(function(error) {
-                        console.error('Error during unsubscribe:', error);
-                    });
-                }
-
-                // Function to send the subscription object to the server
-                function sendSubscriptionToServer(subscription) {
-                    fetch('/subscribe', {
-                        method: 'POST',
-                        body: JSON.stringify(subscription),
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Failed to send subscription to server.');
-                        }
-                        console.log('Subscription sent to server successfully.');
-                    })
-                    .catch(function(error) {
-                        console.error('Error sending subscription to server:', error);
-                    });
-                }
-
-                // Helper function to convert the VAPID public key from Base64 to UInt8Array
-                function urlBase64ToUint8Array(base64String) {
-                    const padding = '='.repeat((4 - base64String.length % 4) % 4); // Fix padding if needed
-                    const base64 = (base64String + padding)
-                        .replace(/\-/g, '+') // Replace URL-safe characters
-                        .replace(/_/g, '/');
-                    const rawData = window.atob(base64); // Decode base64 to binary string
-                    const outputArray = new Uint8Array(rawData.length); // Create a typed array
-                    // Populate the typed array with the binary data
-                    for (let i = 0; i < rawData.length; ++i) {
-                        outputArray[i] = rawData.charCodeAt(i);
-                    }
-                    return outputArray; // Return the final array
-                }
-            })
-            .catch(function(error) {
-                // Handle errors during service worker registration
-                console.error('Service Worker registration failed:', error);
-            });
-            
-        } else {
-            // Notify if the browser does not support Service Workers or Push API
-            console.log('Push messaging is not supported in this browser.');
-        }
-
-
-    
+        
         // Scroll-related functionality
         const tableWrapper = document.querySelector('.table-wrapper');
         let scrollTimeout;

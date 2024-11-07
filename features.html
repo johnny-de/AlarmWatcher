@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AlarmWatcher</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <script src="/theme-color.js"></script>
+</head>
+<body>
+    <!-- Header with logo -->
+    <header>
+        <div class="header-container">
+            <div class="logo">
+                <img src="/logo.svg" alt="AlarmWatcher">
+            </div>
+        </div>
+    </header>
+
+    <!-- Buttons-->
+    <div class="filter-buttons">
+        <button id="save-button">Refresh page</button>
+        <button id="cancel-button">Back</button>
+    </div>
+
+    <!-- AlarmWatcher Setup Instructions -->
+    <div class="settings-container">
+        <div class="settings-wrapper">
+            <h2>Features</h2>
+            <hr>
+
+            <!-- Step 1 -->
+            <h3>1 - Download and trust the SSL certificate</h3>
+            <p>
+                <strong>a)</strong> Download the self-signed SSL certificate by clicking the button below.<br>
+                <strong>b)</strong> Import the downloaded certificate to your operating system's certificate store and mark it as trusted.<br>
+                <strong>c)</strong> Close and reopen your browser to allow it to recognize and apply the new certificate.
+            </p>
+            <button onclick="window.location.href='/cert/getDER'" download="AlarmWatcherCertificate.der">Download certificate (.der)</button>
+            <button onclick="window.open('/cert/getPEM', '_blank')">View certificate (.cert)</button>
+            <p><strong>Status:</strong> <span id="certStatusMessage1"></span></p>
+            <hr>
+
+            <!-- Step 2 -->
+            <h3>2 - Using a secure and trusted connection (HTTPS)</h3>
+            <p id="alarmwatcher-link">Open the AlarmWatcher web page at https://localhost:3778.</p>
+            <p><em><strong>Note:</strong> If you encounter a warning about the website being unsafe, follow step 1 to add and trust the certificate.</em></p>
+            <p><strong>Status:</strong> <span id="certStatusMessage2"></span></p>
+            <hr>
+
+            <!-- Step 3 -->
+            <h3>3 - Enable notifications</h3>
+            <p>Enable notifications by clicking the button below. This will ensure you receive alerts for important alarms.</p>
+            <button id="enable-notifications-button">Subscribe to notifications</button>
+            <p><em><strong>Tip:</strong> If you wish to unsubscribe from notifications, you can disable them in your browser settings for this website.</em></p>
+            <p><em><strong>Note:</strong> Notifications will only work if you are visiting this website over a secure and trusted connection (see step 2).</em></p>
+            <p><strong>Status:</strong> <span id="notificationStatusMessage"></span></p>
+            <hr>
+
+            <!-- Optional step -->
+            <h3>OPTIONAL - Add AlarmWatcher as a progressive web app (PWA)</h3>
+            <p>For easy access, you can install AlarmWatcher as a PWA on your device by clicking the button below.</p>
+            <button id="installButton">Install AlarmWatcher as PWA</button>
+            <p><em><strong>Note:</strong> The PWA can only be installed if you are using a secure and trusted connection (see step 2).</em></p>
+            <p><strong>Status:</strong> <span id="pwaStatusMessage"></span></p>
+            <hr>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("save-button").addEventListener("click", refreshPage);
+            document.getElementById("cancel-button").addEventListener("click", handleCancel);
+            document.getElementById("enable-notifications-button").addEventListener("click", enableNotifications);
+            updateAlarmWatcherLink();
+        });
+
+        function handleCancel() {
+            window.location.href = window.location.origin + "/";
+        }
+
+        function refreshPage() {
+            location.reload();
+        }
+
+        async function updateAlarmWatcherLink() {
+            try {
+                const response = await fetch('/getSettings');
+                const data = await response.json();
+                const httpsPort = data.ports.https_port;
+                const baseUrl = window.location.hostname;
+                const fullUrl = `https://${baseUrl}:${httpsPort}`;
+                document.getElementById("alarmwatcher-link").innerHTML = `Open the AlarmWatcher web page at <a href="${fullUrl}" target="_blank">${fullUrl}</a>.`;
+            } catch (error) {
+                console.error("Error fetching AlarmWatcher settings:", error);
+            }
+        }
+
+        function enableNotifications() {
+            if ('serviceWorker' in navigator && 'PushManager' in window) {
+                navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+                    Notification.requestPermission().then(function(permission) {
+                        if (permission === 'granted') {
+                            subscribeUser(registration);
+                        } else {
+                            console.log('User denied notifications.');
+                        }
+                    });
+                }).catch(function(error) {
+                    console.error('Service Worker registration failed:', error);
+                });
+            } else {
+                console.log('Push messaging is not supported in this browser.');
+            }
+        }
+
+        function subscribeUser(registration) {
+            fetch('/vapidPublicKey')
+                .then(response => response.json())
+                .then(data => {
+                    const applicationServerKey = urlBase64ToUint8Array(data.publicKey);
+                    return registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: applicationServerKey
+                    });
+                })
+                .then(subscription => {
+                    console.log('User subscribed successfully:', subscription);
+                    sendSubscriptionToServer(subscription);
+                })
+                .catch(error => console.error('Failed to subscribe the user:', error));
+        }
+
+        function sendSubscriptionToServer(subscription) {
+            fetch('/subscribe', {
+                method: 'POST',
+                body: JSON.stringify(subscription),
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to send subscription to server.');
+                console.log('Subscription sent to server successfully.');
+            })
+            .catch(error => console.error('Error sending subscription to server:', error));
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        let deferredPrompt;
+    const installButton = document.getElementById('installButton');
+    
+    // Listen for the "beforeinstallprompt" event to show the button
+    window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault(); // Prevent the prompt from appearing automatically
+        deferredPrompt = event; // Store the event to trigger it later
+        installButton.style.display = 'inline-block'; // Show the install button
+    });
+
+    // When the user clicks the install button
+    installButton.addEventListener('click', () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt(); // Show the install prompt
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted the A2HS prompt');
+                } else {
+                    console.log('User dismissed the A2HS prompt');
+                }
+                deferredPrompt = null; // Reset the deferred prompt
+            });
+        }
+    });
+
+    // Function to check if the current connection is secure and trusted
+    function checkCertificateTrust() {
+        // Get the elements to display the status messages
+        const certStatusMessage1 = document.getElementById("certStatusMessage1");
+        const certStatusMessage2 = document.getElementById("certStatusMessage2");
+
+        // Check if the page is using HTTPS and if the connection is secure
+        const isSecure = window.location.protocol === "https:" && window.isSecureContext;
+
+        if (isSecure) {
+            // If the connection is secure and trusted, display a success message in green
+            certStatusMessage1.innerHTML = certStatusMessage2.innerHTML = "The connection is secure and trusted. The certificate is installed correctly.";
+            certStatusMessage1.style.color = certStatusMessage2.style.color = "green";
+        } else if (window.location.protocol === "https:") {
+            // If the connection is over HTTPS but not secure, indicate potential certificate issues in orange
+            certStatusMessage1.innerHTML = certStatusMessage2.innerHTML = "The connection is secure, but the certificate may not be trusted. Please ensure it is imported correctly.";
+            certStatusMessage1.style.color = certStatusMessage2.style.color = "orange";
+        } else {
+            // If the connection is not secure (HTTP), display a warning in red
+            certStatusMessage1.innerHTML = certStatusMessage2.innerHTML = "The connection is not secure (HTTP). Please ensure you are using HTTPS.";
+            certStatusMessage1.style.color = certStatusMessage2.style.color = "red";
+        }
+    }
+
+    // Function to check if notifcations are allowed and working
+    function checkNotificationStatus() {
+        const notificationStatusMessage = document.getElementById('notificationStatusMessage');
+        const enableButton = document.getElementById('enable-notifications-button');
+
+        if (!('serviceWorker' in navigator && 'PushManager' in window)) {
+            console.log('Push messaging is not supported in this browser.');
+            notificationStatusMessage.innerHTML = 'Push messaging is not supported.';
+            notificationStatusMessage.style.color = 'red';
+            return;
+        }
+
+        // Check current notification permission state without prompting the user
+        if (Notification.permission === 'denied') {
+            notificationStatusMessage.innerHTML = 'Notifications are not allowed. Please allow notifications in your browser.';
+            notificationStatusMessage.style.color = 'red';
+            enableButton.disabled = true;
+        } else if (Notification.permission === 'default') {
+            notificationStatusMessage.innerHTML = 'Notifications are not yet decided. Please allow notifications after clicking the button below.';
+            notificationStatusMessage.style.color = 'orange';
+        } else {
+            // 'granted' case
+            navigator.serviceWorker.ready.then(function(registration) {
+                registration.pushManager.getSubscription().then(function(subscription) {
+                    if (subscription) {
+                        notificationStatusMessage.innerHTML = 'Notifications are allowed and the subscription is active.';
+                        notificationStatusMessage.style.color = 'green';
+                        enableButton.disabled = true;
+                    } else {
+                        notificationStatusMessage.innerHTML = 'Notifications are allowed, but no active subscription found. Please subscribe using the button below.';
+                        notificationStatusMessage.style.color = 'orange';
+                    }
+                });
+            }).catch(function(error) {
+                console.error('Error checking service worker subscription:', error);
+            });
+        }
+    }
+
+    // Function to check if the app is installed as a PWA
+    function checkPWAStatus() {
+            const pwaStatusMessage = document.getElementById('pwaStatusMessage');
+            const pwaButton = document.getElementById('installButton');
+            
+            // Check if the app is installed and running as a PWA
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                pwaStatusMessage.innerHTML = "AlarmWatcher is installed and running as a PWA.";
+                pwaStatusMessage.style.color = 'green';
+                pwaButton.disabled = true;
+            } else {
+                pwaStatusMessage.innerHTML = "AlarmWatcher is not used as a PWA.";
+            }
+        }
+
+    // Function to check things continuously with delayed rechecks
+    function startContinuousChecks() {
+        checkCertificateTrust();    // Step 1 & 2 check
+        checkNotificationStatus();  // Step 3 check
+        checkPWAStatus()            // Optional step check
+
+        // Set a timeout to call the function again after 2 seconds (2000 milliseconds)
+        setTimeout(startContinuousChecks, 2000);
+    }
+
+    // Run the checks immediately when the page loads
+    window.onload = function() {
+        startContinuousChecks();  // Initial check on page load
+    };
+    </script>
+</body>
+</html>
