@@ -229,6 +229,10 @@
             enableButton.disabled = true;
             return;
         }
+
+        // Use as default case
+        notificationStatusMessage.innerHTML = 'Notifications are allowed, but no active subscription found. Please subscribe using the button below.';
+        notificationStatusMessage.style.color = 'orange';
         
         if (Notification.permission === 'denied') {
             notificationStatusMessage.innerHTML = 'Notifications are not allowed. Please allow notifications in your browser.';
