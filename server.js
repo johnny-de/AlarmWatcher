@@ -171,7 +171,6 @@ function generateSelfSignedCertificates() {
     };
 
     console.log('Self-signed HTTPS certificates created successfully, valid for days:', options.days);
-    console.log('DER certificate generated at:', certDerPath);
 }
 
 // Function to check if certificates exist and generate new ones if necessary
