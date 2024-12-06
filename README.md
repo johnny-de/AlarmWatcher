@@ -54,11 +54,11 @@ This feature is especially useful for high-priority alarms, ensuring that critic
 
 ### Notifications
 
-With Notifications, AlarmWatcher ensures you never miss critical updates by sending alerts directly to your device. Notifications are powered by a service worker, enabling seamless delivery even when the application is not actively open in your browser.
+With Notifications, AlarmWatcher ensures you never miss critical updates by sending alerts directly to your device. Notifications are powered by a service worker, enabling seamless delivery even when AlarmWatcher is not actively open in your browser.
 
 ### PWA support
 
-AlarmWatcher is fully compatible as a Progressive Web App (PWA), which means the web interface works like a native app on supported devices. For mobile users, you can easily add AlarmWatcher to your home screen, and it will function just like an app—no need to download it from an app store.
+AlarmWatcher is fully compatible as a Progressive Web App (PWA), which means the web interface works like a native app on supported devices. For mobile users, you can easily add AlarmWatcher to your home screen, and it will function just like an app — no need to download it from an app store.
 
 ## Public demo
 
