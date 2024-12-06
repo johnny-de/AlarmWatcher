@@ -71,7 +71,7 @@ You can explore a public demo of AlarmWatcher hosted on Glitch by clicking the l
 > The demo has a shared limit of approximately 3000 requests per hour for all users combined (including page loads and API usage).
 Also note that settings and features are disabled in the demo.
 
-[Click here to try the AlarmWatcher (v.1.1.0) Demo.](https://aboard-sandy-ring.glitch.me/)
+[Click here to try the AlarmWatcher (v.1.1.0) demo.](https://aboard-sandy-ring.glitch.me/)
 
 ## Getting started
 
