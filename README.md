@@ -23,13 +23,14 @@ AlarmWatcher is a versatile, self-hosted and intuitive to use alarm management s
     </p>
 </div>
 
-## Key features
+## Features
 
 - **Centralized alarm management:** Aggregate and manage alarms from multiple systems in one place.
 - **Customizable alarm handling:** Define alarm priorities, require acknowledgment, and configure auto-deletion.
-- **Built-in expiration mechanism:** Automatically remove alarms after a set duration to avoid clutter.
-- **Simple, yet powerful API:** Easily integrate with any system through a flexible and straightforward http-API.
-- **Web-based frontend:** View and manage alarms through an intuitive web interface, allowing for custom filters.
+- **Simple, yet powerful API:** Easily integrate with any system through a flexible and straightforward http(s)-API.
+- **Web-based frontend:** View and manage alarms through an intuitive http(s) web interface, allowing for custom filters.
+- **Notifications:** Receive instant notifications about new alarms on every device.
+- **PWA Support:** Add AlarmWatcher as an app on your mobile device.
 
 ### Alarm handling
 
@@ -44,20 +45,28 @@ Each alarm must belong to one of the predefined alarm classes, which determine i
 2. **Warning (medium priority - orange):** Important issues that are not yet critical, but may soon become critical if not addressed.
 3. **Event (lowest priority - gray):** Informational messages or routine events that require no action.
 
-Alarms are handled entirely by the server. Users can view and manage alarms via a web-based frontend, which supports advanced filtering to make it easy to find and respond to specific alarms.
+Alarms are handled entirely by the server. Users can view and manage alarms via a web-based frontend, which supports filtering to make it easy to find and respond to specific alarms.
 
 ### Acknowledgment mechanism
 
 AlarmWatcher also includes an acknowledgment mechanism to ensure critical alarms are not overlooked. When an alarm is raised, it can be marked as requiring acknowledgment. This ensures that even if the alarm is cleared or its defined duration expires, the alarm will remain visible in the system until a user acknowledges it.
 This feature is especially useful for high-priority alarms, ensuring that critical incidents receive the necessary attention and are not missed by automation or system rules.
 
+### Notifications
+
+With Notifications, AlarmWatcher ensures you never miss critical updates by sending alerts directly to your device. Notifications are powered by a service worker, enabling seamless delivery even when the application is not actively open in your browser.
+
+### PWA support
+
+AlarmWatcher is fully compatible as a Progressive Web App (PWA), which means the web interface works like a native app on supported devices. For mobile users, you can easily add AlarmWatcher to your home screen, and it will function just like an app—no need to download it from an app store.
+
 ## Public demo
 
 You can explore a public demo of AlarmWatcher hosted on Glitch by clicking the link below. This demo showcases regularly updated example alarms, and you are welcome to push your own alarms as well!
 
 > [!NOTE]  
-> Total access for all users combined (including loading the page and using the API to manage alarms) is limited to around 3000 requests per hour.
-> Settings and features will not work in public demo.
+> The demo has a shared limit of approximately 3000 requests per hour for all users combined (including page loads and API usage).
+Also note that settings and features are disabled in the demo.
 
 [Click here to try the AlarmWatcher (v.1.0.4) Demo.](https://aboard-sandy-ring.glitch.me/)
 
@@ -65,39 +74,18 @@ You can explore a public demo of AlarmWatcher hosted on Glitch by clicking the l
 
 To learn how to install, configure, and run AlarmWatcher, please visit the detailed guide in the [Wiki](https://github.com/johnny-de/alarmwatcher/wiki).
 
-## Published versions
+## Future features
 
-This section outlines the major published versions of AlarmWatcher, detailing their key features and enhancements.
+Outlined below are the planned features for upcoming versions.
 
-### Version 1.0.0
-
-The first major release (v1.0.0) focused on delivering a fully functioning backend and a user-friendly frontend, along with essential features for alarm management.
-- **Backend:** Completed and thoroughly tested backend for alarm management, handling alarm states, acknowledgments, and filtering. Ensured stability and reliability for all server-side operations.
-- **Frontend:** Fully functional, web-based frontend for monitoring and managing alarms. Basic filtering capabilities, allowing users to filter alarms based on alarm classes. Included support for dark mode, enabling users to switch between a light and dark theme. Notification support for pushing browser notifications to the underlying OS.
-- **Docker image:** Docker image on DockerHub to simplify deployment and installation.
-- **Wiki documentation:** Wiki to guide users on how to install, configure, and use AlarmWatcher.
-
-## Future milestones
-
-Outlined below are the planned milestones for upcoming versions.
-
-### Version 1.1.0
-
-The second major release (v1.1.0) will enhance AlarmWatcher with additional features and interfaces.
-- **HTTPS support:** Add support for secure connections using HTTPS.
+- **Advanced filtering:** Improve the filtering capabilities of the frontend, enabling more advanced search options and filtering based on alarm history.
 - **Email interface:** Introduce an interface for receiving alarms via email (SMTP). Idea is to provide predefined addresses (e.g. uptime-kuma@alarmwatcher) and also allowed users to create custom email-interfaces to raise or clear alarms based on specific keywords in incoming emails.
-
-### Version 1.2.0
-
-The third major release (v1.2.0) will focus on building a comprehensive alarm history system, improving database performance, and optimizing filtering.
 - **Alarm archiving:** Introduce an alarm archiving feature, allowing alarms to be stored beyond their active state, creating a history of all alarms.
 - **Database optimization:** Optimize the database structure to handle larger datasets efficiently.
-- **Advanced filtering:** Improve the filtering capabilities of the frontend, enabling more advanced search options and filtering based on alarm history.
 
-### Future milestones
+### Additional milestones
 
 Beyond the core milestones for AlarmWatcher, additional features and extensions are planned to broaden the system's reach and usability.
-- **Open-source app:** Develop and release an open-source  app that allows users to view alarms and receive push notifications on their mobile devices.
 - **Node-RED integration:** Create AlarmWatcher nodes for Node-RED.
 - **Home Assistant integration:** Develop an integration with Home Assistant.
 - **Uptime Kuma integration:** Implement an integration with Uptime Kuma.
