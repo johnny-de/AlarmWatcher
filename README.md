@@ -57,8 +57,9 @@ You can explore a public demo of AlarmWatcher hosted on Glitch by clicking the l
 
 > [!NOTE]  
 > Total access for all users combined (including loading the page and using the API to manage alarms) is limited to around 3000 requests per hour.
+> Settings and features will not work in public demo.
 
-[Click here to try the AlarmWatcher (v.1.0.1) Demo.](https://mirror-time-boot.glitch.me/)
+[Click here to try the AlarmWatcher (v.1.0.4) Demo.](https://aboard-sandy-ring.glitch.me/)
 
 ## Getting started
 

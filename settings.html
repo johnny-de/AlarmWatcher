@@ -192,11 +192,18 @@
                 },
                 body: JSON.stringify(data)
             })
-
-            // Go back to the main page upon successful save
-            window.location.href = window.location.origin + "/";
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to save settings");
+                }
+                // Redirect only after fetch completes
+                window.location.href = window.location.origin + "/";
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("An error occurred while saving settings.");
+            });
         }
     </script>
-
 </body>
 </html>
