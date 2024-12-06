@@ -453,22 +453,29 @@ app.get('/api/raiseAlarm', (req, res) => {
  *         description: Error fetching/acknowledging alarm
  */
 app.get('/api/ackAlarm', (req, res) => {
-    alarm_id = req.query.alarm_id;
-    ack_time = Math.floor(Date.now() / 1000);  // Current UNIX timestamp in seconds
+    const alarm_id = req.query.alarm_id;
+    const ack_time = Math.floor(Date.now() / 1000);  // Current UNIX timestamp in seconds
 
     // Check if alarm_id is provided
     if (!alarm_id) {
         return res.status(400).send("Error fetching alarm: 'alarm_id' is required.");
     }
-    
-    // Check if the alarm requires acknowledgment
+
+    // Check if the alarm exists in the database
     db.get(
-        `SELECT require_ack FROM alarms WHERE alarm_id = ?`,
+        `SELECT alarm_id, require_ack FROM alarms WHERE alarm_id = ?`,
         [alarm_id],
         function(err, row) {
             if (err) {
                 return res.status(400).send("Error fetching alarm: " + err.message);
             }
+
+            // If alarm is not found, return 404
+            if (!row) {
+                return res.status(200).send("Alarm acknowledged successfully if available!");
+            }
+
+            // If the alarm requires acknowledgment
             if (row.require_ack == 1) {
                 // Update the ack_time for this alarm
                 db.run(
