@@ -6,7 +6,7 @@
  * +----------------------------------------------
 */ 
 
-const version = 'v1.1.0';
+const version = 'v1.2.0';
 
 /** 
  * +----------------------------------------------
@@ -222,7 +222,7 @@ const swaggerOptions = {
     swaggerDefinition: {
         info: {
             title: "AlarmWatcher API",
-            version: "1.0.0",
+            version: "1.1.0",
             description: "API documentation for AlarmWatcher"
         }
     },
@@ -268,13 +268,16 @@ const db = new sqlite3.Database(dbPath, (err) => {
 
         // Create a new table for storing alarms
         db.run(`CREATE TABLE IF NOT EXISTS alarms (
-            alarm_id TEXT PRIMARY KEY NOT NULL, -- Unique identifier for the alarm (string)
-            alarm_class INTEGER NOT NULL,       -- Class of the alarm (integer: 1, 2, or 3)
-            alarm_state TEXT NOT NULL,          -- State of the alarm (string)
-            raised_time INTEGER NOT NULL,       -- Timestamp when the alarm was raised (integer, unix timestamp)
-            require_ack BOOLEAN NOT NULL,       -- Whether the alarm needs to be acknowledged (boolean)
-            ack_time INTEGER,                   -- Time when the alarm was acknowledged (integer, unix timestamp)
-            delete_time INTEGER                 -- Time when the alarm was deleted (integer, unix timestamp)
+            alarm_id TEXT PRIMARY KEY NOT NULL, -- Unique identifier for alarm (string)
+            alarm_class INTEGER NOT NULL,       -- Class of alarm (integer: 1, 2, or 3)
+            alarm_state TEXT NOT NULL,          -- State of alarm (string)
+            raised_time INTEGER NOT NULL,       -- Timestamp when alarm was raised (integer, unix timestamp)
+            require_ack BOOLEAN NOT NULL,       -- Whether alarm needs to be acknowledged (boolean)
+            ack_time INTEGER,                   -- Time when alarm was acknowledged (integer, unix timestamp)
+            delete_time INTEGER,                -- Time when alarm was deleted (integer, unix timestamp)
+            class_1_time INTEGER,               -- Timestamp for when alarm shall transition to class 1 (integer, unix timestamp)
+            class_2_time INTEGER,               -- Timestamp for when alarm shall transition to class 2 (integer, unix timestamp)
+            class_3_time INTEGER                -- Timestamp for when alarm shall transition to class 3 (integer, unix timestamp)
         )`, (err) => {
             if (err) {
                 console.log("Error creating table: " + err.message);
@@ -364,6 +367,24 @@ app.get('/api/serverTime', (req, res) => {
  *         required: false
  *         type: integer
  *         default: 0
+ *       - name: delay_class_1
+ *         description: Seconds after which the alarm will transition to class 1 (0 = no transition)
+ *         in: query
+ *         required: false
+ *         type: integer
+ *         default: 0
+ *       - name: delay_class_2
+ *         description: Seconds after which the alarm will transition to class 2 (0 = no transition)
+ *         in: query
+ *         required: false
+ *         type: integer
+ *         default: 0
+ *       - name: delay_class_3
+ *         description: Seconds after which the alarm will transition to class 3 (0 = no transition)
+ *         in: query
+ *         required: false
+ *         type: integer
+ *         default: 0
  *     responses:
  *       200:
  *         description: Alarm inserted successfully
@@ -371,16 +392,30 @@ app.get('/api/serverTime', (req, res) => {
  *         description: Error inserting alarm
  */
 app.get('/api/raiseAlarm', (req, res) => {
-    const alarm_id = req.query.alarm_id;
-    const alarm_class = Number(req.query.alarm_class);
-    const alarm_state = req.query.alarm_state || "on";          // Default to "on" if not provided
-    const raised_time = Math.floor(Date.now() / 1000);          // Current UNIX timestamp in seconds
-    const require_ack = (req.query.req_ack || false) == "true"; // Default to false if not provided
-    const delete_time = Number(req.query.duration) || null;     // Default to null if not provided
+    let alarm_id = req.query.alarm_id;
+    let alarm_class = Number(req.query.alarm_class);
+    let alarm_state = req.query.alarm_state || "on";              // Default to "on" if not provided
+    let raised_time = Math.floor(Date.now() / 1000);              // Current UNIX timestamp in seconds
+    let require_ack = (req.query.req_ack || false) == "true";     // Default to false if not provided
+    let delete_time = Number(req.query.duration) || null;         // Default to null if not provided
+    let class_1_time = Number(req.query.delay_class_1) || null;  // Default to null if not provided
+    let class_2_time = Number(req.query.delay_class_2) || null;  // Default to null if not provided
+    let class_3_time = Number(req.query.delay_class_3) || null;  // Default to null if not provided
 
     // Calculate deletion time (if provided) from duration and current time
     if (delete_time) {
         delete_time += raised_time;
+    }
+
+    // Calculate delay time (if provided) from delay_time and current time
+    if (class_1_time) {
+        class_1_time += raised_time;
+    }
+    if (class_2_time) {
+        class_2_time += raised_time;
+    }
+    if (class_3_time) {
+        class_3_time += raised_time;
     }
 
     // Send notification if alarm with the same class and state existed not before
@@ -397,33 +432,28 @@ app.get('/api/raiseAlarm', (req, res) => {
 
         // Send notification if new alarm is class 1 or 2
         if (alarm_class <= 2) {
-            // Count the number of rows with alarm_class == 1
-            db.get(`SELECT COUNT(*) AS count FROM alarms WHERE alarm_class = 1`, [], (err1, row1) => {
-                if (err1) {
-                    return res.status(400).send("Error counting alarms with class 1: " + err1.message);
-                }
-                const countClass1 = row1.count;
-
-                // After counting class 1, count the number of rows with alarm_class == 2
-                db.get(`SELECT COUNT(*) AS count FROM alarms WHERE alarm_class = 2`, [], (err2, row2) => {
-                    if (err2) {
-                        return res.status(400).send("Error counting alarms with class 2: " + err2.message);
-                    }
-                    const countClass2 = row2.count;
-
-                    // Send notification after both counts are retrieved
-                    sendNotification(alarm_id, alarm_state, alarm_class, countClass1, countClass2);
-                });
-            });
+            // Send notification
+            sendNotification(alarm_id, alarm_state, alarm_class);
         }
     });
 
     // Add the alarm to the table
     db.run(
-        `INSERT OR REPLACE INTO alarms (alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time) 
-        VALUES (?, ?, ?, ?, ?, ?)`,
-        [alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time],
-        function(err) {
+        `INSERT OR REPLACE INTO alarms 
+        (alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time, class_1_time, class_2_time, class_3_time) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+            alarm_id,                 // Unique identifier for the alarm
+            alarm_class,              // Current class of the alarm
+            alarm_state,              // State of the alarm (e.g., "on", "active")
+            raised_time,              // Timestamp when the alarm was raised
+            require_ack,              // Boolean indicating if acknowledgment is required
+            delete_time,              // Timestamp for when the alarm should be deleted
+            class_1_time,       // Timestamp for when the alarm transitions to class 1
+            class_2_time,       // Timestamp for when the alarm transitions to class 2
+            class_3_time        // Timestamp for when the alarm transitions to class 3
+        ],
+        function (err) {
             if (err) {
                 return res.status(400).send("Error inserting alarm: " + err.message);
             } else {
@@ -705,19 +735,45 @@ const saveSubscriptions = () => {
     fs.writeFileSync(subscriptionsFilePath, JSON.stringify(subscriptions, null, 2), 'utf-8');
 };
 
-function sendNotification(messageAlarm, messageState, messageClass, countAlarm, countWarnings) {
-    // Define message content
-    const notificationClass = messageClass === 1 ? 'alarm' : messageClass === 2 ? 'warning' : 'alarm';
-    const notificationPayload = JSON.stringify({
-        title: 'AlarmWatcher - New ' + notificationClass + '!',
-        body: messageAlarm + ' is ' + messageState + '!\n> alarms: ' + countAlarm + '  > warnings: ' + countWarnings + '',
-    });
+// Send notification
+async function sendNotification(messageAlarm, messageState, messageClass) {
+    try {
+        // Count the number of rows with alarm_class == 1
+        const countAlarms = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) AS count FROM alarms WHERE alarm_class = 1`, [], (err, row) => {
+                if (err) reject("Error counting alarms with class 1: " + err.message);
+                resolve(row.count);
+            });
+        });
 
-    // Send notification to all stored subscriptions
-    const promises = subscriptions.map(subscription => {
-    return webPush.sendNotification(subscription, notificationPayload)
-        .catch(error => console.error('Error sending notification:', error));
-    });
+        // Count the number of rows with alarm_class == 2
+        const countWarnings = await new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) AS count FROM alarms WHERE alarm_class = 2`, [], (err, row) => {
+                if (err) reject("Error counting alarms with class 2: " + err.message);
+                resolve(row.count);
+            });
+        });
+
+        // Define message content
+        const notificationClass = messageClass === 1 ? 'alarm' : messageClass === 2 ? 'warning' : 'alarm';
+        const notificationPayload = JSON.stringify({
+            title: 'AlarmWatcher - New ' + notificationClass + '!',
+            body: `${messageAlarm} is ${messageState}!\n> alarms: ${countAlarms}  > warnings: ${countWarnings}`,
+        });
+
+        // Log the notification details
+        console.log(`Sending notification: ${notificationPayload}`);
+
+        // Send notification to all stored subscriptions
+        const promises = subscriptions.map(subscription => 
+            webPush.sendNotification(subscription, notificationPayload)
+                .catch(error => console.error('Error sending notification:', error))
+        );
+        
+        await Promise.all(promises);  // Wait for all notifications to be sent
+    } catch (error) {
+        console.error("Error while sending notifications:", error);  // Log the error or handle it as needed
+    }
 }
 
 /** 
@@ -887,7 +943,7 @@ function restartServers() {
 
 /** 
  * +----------------------------------------------
- * | HANDLING AUTO DELETION
+ * | HANDLING AUTO DELETION AND CLASS TRANSITIONS
  * +----------------------------------------------
 */ 
 
@@ -909,6 +965,84 @@ function deleteExpiredAlarms() {
 
 // Set an interval to check and delete expired alarms every second
 setInterval(deleteExpiredAlarms, 1000);  // 1000ms = 1 second
+
+// Function to update alarm class based on times
+function updateAlarmClasses() {
+    const date = Date.now();
+    const currentTime = Math.floor(date / 1000);  // Get current UNIX timestamp
+
+    // Fetch alarms with class_1_time, class_2_time, or class_3_time in the past
+    db.all(
+        `SELECT * FROM alarms WHERE class_1_time <= ? OR class_2_time <= ? OR class_3_time <= ?`,
+        [currentTime, currentTime, currentTime], function (err, alarms) {
+            if (err) {
+                console.error("Error fetching alarms: " + err.message);
+                return;
+            }
+
+            // Process each alarm to check for necessary updates
+            alarms.forEach(alarm => {
+                // Check for class_1_time updates
+                if (alarm.class_1_time && alarm.class_1_time <= currentTime) {
+                    // Reset class_1_time and update alarm_class if necessary
+                    db.run(
+                        `UPDATE alarms SET class_1_time = NULL, alarm_class = 1 WHERE alarm_id = ?`, [alarm.alarm_id], function (err) {
+                            if (err) {
+                                console.error(`Error updating alarm ID ${alarm.id} for class 1: ` + err.message);
+                            } else if (this.changes > 0) {
+                                console.log(`Alarm ID ${alarm.id} updated to class 1.`);
+                            }
+                        }
+                    );
+
+                    // Send notification if alarm_class has changed
+                    if (alarm.alarm_class != 1) {
+                        // Send notification
+                        sendNotification(alarm.alarm_id, alarm.alarm_state, 1);
+                    }
+                }
+
+                // Check for class_2_time updates
+                if (alarm.class_2_time && alarm.class_2_time <= currentTime) {
+                    // Reset class_2_time and update alarm_class if necessary
+                    db.run(
+                        `UPDATE alarms SET class_2_time = NULL, alarm_class = 2 WHERE alarm_id = ?`, [alarm.alarm_id], function (err) {
+                            if (err) {
+                                console.error(`Error updating alarm ID ${alarm.id} for class 2: ` + err.message);
+                            } else if (this.changes > 0) {
+                                console.log(`Alarm ID ${alarm.id} updated to class 2.`);
+                            }
+                        }
+                    );
+
+                    // Send notification if alarm_class has changed
+                    if (alarm.alarm_class != 2) {
+                        // Send notification
+                        sendNotification(alarm.alarm_id, alarm.alarm_state, 2);
+                    }
+                }
+
+                // Check for class_3_time updates
+                if (alarm.class_3_time && alarm.class_3_time <= currentTime) {
+                    // Reset class_3_time and update alarm_class if necessary
+                    db.run(
+                        `UPDATE alarms SET class_3_time = NULL, alarm_class = 3 WHERE alarm_id = ?`, [alarm.alarm_id], function (err) {
+                            if (err) {
+                                console.error(`Error updating alarm ID ${alarm.id} for class 3: ` + err.message);
+                            } else if (this.changes > 0) {
+                                console.log(`Alarm ID ${alarm.id} updated to class 3.`);
+                            }
+                        }
+                    );
+                }
+            });
+        }
+    );
+}
+
+
+// Set an interval to check and update alarm classes every second
+setInterval(updateAlarmClasses, 1000);  // 1000ms = 1 second
 
 /** 
  * +----------------------------------------------
