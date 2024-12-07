@@ -52,6 +52,14 @@ Alarms are handled entirely by the server. Users can view and manage alarms via 
 AlarmWatcher also includes an acknowledgment mechanism to ensure critical alarms are not overlooked. When an alarm is raised, it can be marked as requiring acknowledgment. This ensures that even if the alarm is cleared or its defined duration expires, the alarm will remain visible in the system until a user acknowledges it.
 This feature is especially useful for high-priority alarms, ensuring that critical incidents receive the necessary attention and are not missed by automation or system rules.
 
+### Alarm class transisition mechanism
+
+AlarmWatcher also offers an alarm class transition mechanism that allows alarms to change their class after a defined period.
+
+When an alarm is triggered, it starts in its initial alarm class. If a delay time is set, the alarm will transition to a new class after the specified time.
+
+This mechanism can be used to ensure that unresolved issues receive more attention over time and helps filter out short-lived alarms, like a device briefly going offline. 
+
 ### Notifications
 
 With Notifications, AlarmWatcher ensures you never miss critical updates by sending alerts directly to your device. Notifications are powered by a service worker, enabling seamless delivery even when AlarmWatcher is not actively open in your browser.
