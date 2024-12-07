@@ -28,7 +28,7 @@ AlarmWatcher is a versatile, self-hosted and intuitive to use alarm management s
 - **Centralized alarm management:** Aggregate and manage alarms from multiple systems in one place.
 - **Customizable alarm handling:** Define alarm priorities, require acknowledgment, and configure auto-deletion.
 - **Simple, yet powerful API:** Easily integrate with any system through a flexible and straightforward http(s)-API.
-- **Web-based frontend:** View and manage alarms through an intuitive http(s) web interface, allowing for custom filters.
+- **Web-based frontend:** View and manage alarms through an intuitive http(s) web interface.
 - **Notifications:** Receive instant notifications about new alarms on every device.
 - **PWA Support:** Add AlarmWatcher as an app on your mobile device.
 
@@ -55,9 +55,7 @@ This feature is especially useful for high-priority alarms, ensuring that critic
 ### Alarm class transition mechanism
 
 AlarmWatcher also offers an alarm class transition mechanism that allows alarms to change their class after a defined period.
-
 When an alarm is triggered, it starts in its initial alarm class. If a delay time is set, the alarm will transition to a new class after the specified time.
-
 This mechanism can be used to ensure that unresolved issues receive more attention over time and helps filter out short-lived alarms, like a device briefly going offline. 
 
 ### Notifications
