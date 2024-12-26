@@ -64,6 +64,57 @@
     </div>
 
     <script>
+        // Dark mode and preselect event filter handling
+        document.addEventListener('DOMContentLoaded', () => {
+            // Fetch settings from the server
+            fetch('/getSettings')
+            .then(response => response.json())
+            .then(settings => {
+                const userPreference = settings.design.dark_mode;
+
+                // Apply the theme based on user preference
+                applyTheme(userPreference);
+
+                // Check if hide_events is true and pre-select the 'Events' filter
+                if (settings.design.hide_events) {
+                    // If hide_events is true, the Events filter should be deselected (if any).
+                    document.getElementById('filter-events').classList.add('active');
+                    // Enable the events filter in the activeFilters object
+                    activeFilters.events = true;
+                    // Re-fetch alarms to apply filters
+                    fetchAlarms();
+                }
+            });
+
+            // Function to apply the theme
+            function applyTheme(theme) {
+                const htmlElement = document.documentElement;
+
+                // Remove existing theme classes
+                htmlElement.classList.remove('dark', 'light');
+
+                if (theme === 'dark') {
+                    htmlElement.classList.add('dark');
+                } else if (theme === 'light') {
+                    htmlElement.classList.add('light');
+                } else {
+                    // 'system' - Follow system preference
+                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        htmlElement.classList.add('dark');
+                    } else {
+                        htmlElement.classList.add('light');
+                    }
+                }
+
+                // Save the theme in localStorage for persistence
+                localStorage.setItem('theme', theme);
+            }
+
+            // Apply the stored theme on page load (fallback to system if none is stored)
+            const storedTheme = localStorage.getItem('theme') || 'system';
+            applyTheme(storedTheme);
+        });
+
         // Track whether the navigation is open
         let isNavOpen = false;
 
@@ -236,12 +287,12 @@
     
         // Toggle filter buttons
         const filterButtons = document.querySelectorAll('.filter-buttons button');
-    
+
         filterButtons.forEach(button => {
             button.addEventListener('click', () => {
                 // Toggle the 'active' class on the clicked button
                 button.classList.toggle('active');
-    
+
                 // Update the activeFilters object based on button state
                 if (button.id === 'filter-alarms') {
                     activeFilters.alarms = !activeFilters.alarms;
@@ -250,7 +301,7 @@
                 } else if (button.id === 'filter-events') {
                     activeFilters.events = !activeFilters.events;
                 }
-    
+
                 // Re-fetch alarms to apply filters
                 fetchAlarms();
             });

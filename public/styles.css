@@ -1,4 +1,5 @@
 /* +++ Colors +++ */
+/* Default (light-mode) */
 :root {
     --color_background: white;
     --color_header: white;
@@ -18,30 +19,28 @@
     --color_blue: rgb(68, 145, 239);
 }
 
-/* Darkmode */
+/* Dark-mode */
 html {
     color-scheme: dark light;
 }
 
-@media (prefers-color-scheme: dark){
-    :root {
-        --color_background: rgb(33, 33, 33);
-        --color_header: rgb(23, 23, 23);
-        --color_table: rgb(13, 13, 13);
-        --color_shadow: rgb(23, 23, 23);
-        --shadow: none;
-        --color_text: rgb(236, 236, 236);
-        --color_button_text: rgb(236, 236, 236);
-        --color_red: rgb(207, 41, 41);
-        --color_light_red: rgb(207, 41, 41);
-        --color_orange: rgb(227, 115, 35);
-        --color_light_orange: rgb(227, 115, 35);
-        --color_gray: rgb(47, 47, 47);
-        --color_green: rgb(33, 167, 58);
-        --color_midle_gray: rgb(33, 33, 33);
-        --color_light_gray: rgb(47, 47, 47);
-        --color_blue: rgb(47, 115, 199);
-    }
+html.dark {
+    --color_background: rgb(33, 33, 33);
+    --color_header: rgb(23, 23, 23);
+    --color_table: rgb(13, 13, 13);
+    --color_shadow: rgb(23, 23, 23);
+    --shadow: none;
+    --color_text: rgb(236, 236, 236);
+    --color_button_text: rgb(236, 236, 236);
+    --color_red: rgb(207, 41, 41);
+    --color_light_red: rgb(207, 41, 41);
+    --color_orange: rgb(227, 115, 35);
+    --color_light_orange: rgb(227, 115, 35);
+    --color_gray: rgb(47, 47, 47);
+    --color_green: rgb(33, 167, 58);
+    --color_midle_gray: rgb(33, 33, 33);
+    --color_light_gray: rgb(47, 47, 47);
+    --color_blue: rgb(47, 115, 199);
 }
 
 /* +++ General +++ */
@@ -213,21 +212,30 @@ textarea {
     width: calc(100vw - 150px);
     resize: none;
     margin: 10px 0;
+    font-size: 16px;
 }
 
 input[type="text"] {
     margin: 10px 0;
     max-width: 300px;
     width: calc(100vw - 150px);
+    font-size: 16px;
 }
 
 input[type="number"] {
     margin: 10px 0;
     width: 100px;
+    font-size: 16px;
 }
 
 input[type="checkbox"] {
     margin: 10px;
+}
+
+select {
+    margin: 10px 0;
+    width: 100px;
+    font-size: 16px;
 }
 
 .option-section input[type="checkbox"] {

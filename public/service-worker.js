@@ -57,8 +57,8 @@ self.addEventListener('push', event => {
 
     const options = {
         body: data.body,
-        icon: data.icon || '/icon.svg',
-        badge: data.badge || '/icon_black.svg',
+        icon: data.icon || 'https://raw.githubusercontent.com/johnny-de/alarmwatcher/refs/heads/main/public/icon.svg',
+        badge: data.badge || 'https://raw.githubusercontent.com/johnny-de/alarmwatcher/refs/heads/main/public/icon_black.svg',
         tag: data.tag || 'notification-tag' // Ensures only one notification of this type is shown at a time
     };
 

@@ -115,10 +115,90 @@
             </div>
 
             <hr>
+
+            <h3>Design</h3>
+            <hr>
+
+            <!-- Checklist for changing dark mode -->
+            <label for="change-dark-mode" class="settings-label">
+                <input type="checkbox" id="change-theme" name="change-theme" onclick="toggleOption('dark-mode-section')">
+                <b>Change default theme</b>
+            </label>
+
+            <!-- Options related to dark mode -->
+            <div id="dark-mode-section" class="option-section">
+                <label for="theme-select" class="settings-label">
+                    Default theme for all users:<br>
+                    <select id="theme-select" name="theme-select">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="system">System</option>
+                    </select>
+                </label>
+            </div>
+
+            <hr>
+
+            <!-- Checklist for hiding events -->
+            <label for="change-events" class="settings-label">
+                <input type="checkbox" id="change-events" name="change-events" onclick="toggleOption('hide-events-section')">
+                <b>Preselect event filter</b>
+            </label>
+
+            <!-- Options related to hiding events -->
+            <div id="hide-events-section" class="option-section">
+                <label for="hide-events" class="settings-label">
+                    <input type="checkbox" id="hide-events" name="hide-events" checked>
+                    Preselect events filter on page load
+                </label>
+            </div>
+
+            <hr>
         </div>
     </div>
 
     <script>
+        // Dark mode handling
+        document.addEventListener('DOMContentLoaded', () => {
+            // Fetch settings from the server
+            fetch('/getSettings')
+                .then(response => response.json())
+                .then(settings => {
+                    const userPreference = settings.design.dark_mode;
+
+                    // Apply the theme based on user preference
+                    applyTheme(userPreference);
+                });
+
+            // Function to apply the theme
+            function applyTheme(theme) {
+                const htmlElement = document.documentElement;
+
+                // Remove existing theme classes
+                htmlElement.classList.remove('dark', 'light');
+
+                if (theme === 'dark') {
+                    htmlElement.classList.add('dark');
+                } else if (theme === 'light') {
+                    htmlElement.classList.add('light');
+                } else {
+                    // 'system' - Follow system preference
+                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        htmlElement.classList.add('dark');
+                    } else {
+                        htmlElement.classList.add('light');
+                    }
+                }
+
+                // Save the theme in localStorage for persistence
+                localStorage.setItem('theme', theme);
+            }
+
+            // Apply the stored theme on page load (fallback to system if none is stored)
+            const storedTheme = localStorage.getItem('theme') || 'system';
+            applyTheme(storedTheme);
+        });
+        
         // Toggle visibility of settings sections
         function toggleOption(sectionId) {
             const section = document.getElementById(sectionId);
@@ -138,6 +218,10 @@
 
                     document.getElementById("common-name").value = data.https.common_name;
                     document.getElementById("alternative-name").value = data.https.alternative_names;
+
+                    document.getElementById("theme-select").value = data.design.dark_mode;
+
+                    document.getElementById("hide-events").checked = data.design.hide_events;
                 })
                 .catch(error => {
                     console.error('Error loading settings:', error);
@@ -150,6 +234,8 @@
             document.getElementById('add-certificates-section').style.display = 'none';
             document.getElementById('custom-ports-section').style.display = 'none';
             document.getElementById('disable-http-section').style.display = 'none';
+            document.getElementById('dark-mode-section').style.display = 'none';
+            document.getElementById('hide-events-section').style.display = 'none';
 
             loadSettings(); // Load settings on page load
 
@@ -181,6 +267,12 @@
                     add_certificates: document.getElementById("add-certificates").checked,
                     server_cert: document.getElementById("server-cert").value,
                     server_key: document.getElementById("server-key").value
+                },
+                design: {
+                    change_design: document.getElementById("change-theme").checked,
+                    dark_mode: document.getElementById("theme-select").value,
+                    change_events: document.getElementById("change-events").checked,
+                    hide_events: document.getElementById("hide-events").checked
                 }
             };
 

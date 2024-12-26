@@ -76,6 +76,47 @@
     </div>
 
     <script>
+        // Dark mode handling
+        document.addEventListener('DOMContentLoaded', () => {
+            // Fetch settings from the server
+            fetch('/getSettings')
+                .then(response => response.json())
+                .then(settings => {
+                    const userPreference = settings.design.dark_mode;
+
+                    // Apply the theme based on user preference
+                    applyTheme(userPreference);
+                });
+
+            // Function to apply the theme
+            function applyTheme(theme) {
+                const htmlElement = document.documentElement;
+
+                // Remove existing theme classes
+                htmlElement.classList.remove('dark', 'light');
+
+                if (theme === 'dark') {
+                    htmlElement.classList.add('dark');
+                } else if (theme === 'light') {
+                    htmlElement.classList.add('light');
+                } else {
+                    // 'system' - Follow system preference
+                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        htmlElement.classList.add('dark');
+                    } else {
+                        htmlElement.classList.add('light');
+                    }
+                }
+
+                // Save the theme in localStorage for persistence
+                localStorage.setItem('theme', theme);
+            }
+
+            // Apply the stored theme on page load (fallback to system if none is stored)
+            const storedTheme = localStorage.getItem('theme') || 'system';
+            applyTheme(storedTheme);
+        });
+        
         document.addEventListener("DOMContentLoaded", function() {
             document.getElementById("save-button").addEventListener("click", refreshPage);
             document.getElementById("cancel-button").addEventListener("click", handleCancel);

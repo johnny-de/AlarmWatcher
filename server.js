@@ -6,7 +6,7 @@
  * +----------------------------------------------
 */ 
 
-const version = 'v1.2.0';
+const version = 'v1.3.0';
 
 /** 
  * +----------------------------------------------
@@ -36,15 +36,19 @@ const filePath = path.join(__dirname, 'data', 'settings.json');
 
 // Define default JSON content
 const defaultSettings = {
-  ports: {
-    http_port: 3777,
-    https_port: 3778,
-  },
-  https: {
-    allow_http: true,
-    common_name: "localhost",
-    alternative_names: "example.com, 93.184.215.14",
-  },
+    ports: {
+        http_port: 3777,
+        https_port: 3778,
+    },
+    https: {
+        allow_http: true,
+        common_name: "localhost",
+        alternative_names: "example.com, 93.184.215.14",
+    },
+    design: {
+        dark_mode: "system",
+        hide_events: false
+    }
 };
 
 // Function to load or create settings.json
@@ -791,12 +795,12 @@ app.get('/getSettings', (req, res) => {
 app.post('/setSettings', (req, res) => {
     res.status(201).json({ message: 'Settings received.' });
 
-    //Ports
+    // Ports
     const changePorts = req.body.ports.change_ports;
     const httpPort = req.body.ports.http_port;
     const httpsPort = req.body.ports.https_port;
 
-    //HTTPS
+    // HTTPS
     const disableHttp = req.body.https.disable_http;
     const allowHttp = req.body.https.allow_http;
 
@@ -808,13 +812,20 @@ app.post('/setSettings', (req, res) => {
     const serverCert = req.body.https.server_cert;
     const serverKey = req.body.https.server_key;
 
+    // Design
+    const changeDesign = req.body.design.change_design;
+    const darkMode = req.body.design.dark_mode;
+
+    const changeEvents = req.body.design.change_events;
+    const hideEvents = req.body.design.hide_events;
+
     // Change ports
     if(changePorts){
         settings.ports.http_port = httpPort;
         settings.ports.https_port = httpsPort;
     }
 
-    //Disable HTTP
+    // Disable HTTP
     if(disableHttp){
         settings.https.allow_http = allowHttp;
     }
@@ -826,6 +837,15 @@ app.post('/setSettings', (req, res) => {
 
         // Generate new certificates
         generateSelfSignedCertificates()
+    }
+
+    // Change design
+    if(changeDesign){
+        settings.design.dark_mode = darkMode;
+    }
+
+    if(changeEvents){
+        settings.design.hide_events = hideEvents;
     }
 
     // Add custom HTTPS certificates
