@@ -51,27 +51,65 @@ const defaultSettings = {
     }
 };
 
+// Function to compare the structure of two objects (only keys and types, not values)
+function compareStructure(obj1, obj2) {
+    // If the types differ, return false
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 === null || obj2 === null) {
+        return false;
+    }
+
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+
+    // If the number of keys differ, the structure is different
+    if (keys1.length !== keys2.length) {
+        return false;
+    }
+
+    // Recursively compare the structure of each key
+    for (let key of keys1) {
+        if (!keys2.includes(key) || typeof obj1[key] !== typeof obj2[key]) {
+            return false;
+        }
+        if (typeof obj1[key] === 'object') {
+            if (!compareStructure(obj1[key], obj2[key])) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 // Function to load or create settings.json
 function loadOrCreateSettings() {
-  // Check if the file exists
-  if (fs.existsSync(settingsPath)) {
-    // If file exists, read and parse it
-    const data = fs.readFileSync(settingsPath, 'utf-8');
-    try {
-      const settings = JSON.parse(data);
-      console.log("Loaded settings from file.");
-      return settings;
-    } catch (err) {
-      console.error("Error parsing settings.json:", err);
-      return null;
+    // Check if the file exists
+    if (fs.existsSync(settingsPath)) {
+        // If file exists, read and parse it
+        const data = fs.readFileSync(settingsPath, 'utf-8');
+        try {
+            const settings = JSON.parse(data);
+            console.log("Loaded settings from file.");
+
+            // Compare the structure of the settings with the default structure (ignore values)
+            if (!compareStructure(settings, defaultSettings)) {
+                console.log("Structure mismatch detected. Overwriting settings file.");
+                fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, 2));
+                return defaultSettings;
+            }
+
+            return settings;
+        } catch (err) {
+            console.error("Error parsing settings.json:", err);
+            return null;
+        }
+    } else {
+        // If file does not exist, create it with default settings
+        fs.mkdirSync(path.dirname(settingsPath), { recursive: true }); // Create directory if needed
+        fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, 2));
+        console.log("Created settings file with default settings.");
+        return defaultSettings;
     }
-  } else {
-    // If file does not exist, create it with default settings
-    fs.mkdirSync(path.dirname(settingsPath), { recursive: true }); // Create directory if needed
-    fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, 2));
-    console.log("Ceated settings file with default settings.");
-    return defaultSettings;
-  }
 }
 
 // Load settings once at the start
