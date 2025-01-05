@@ -437,13 +437,15 @@ function addOrChangeAlarm(db, alarmDetails) {
                     // Existing alarm, update based on req_ack and alarm_class comparison
                     if (existingAlarm.require_ack) {
                         // If no reset, continue with current delay
-                        if (alarmDetails.alarm_class < existingAlarm.alarm_class) {
-                            // Higher alarm_class: update main columns (except req_ack)
+                        if (alarmDetails.alarm_class <= existingAlarm.alarm_class) {
+                            // Higher or same alarm_class: update main columns (except req_ack)
                             db.run(
                                 `UPDATE alarms SET 
-                                alarm_class = ?, alarm_state = ?, delete_time = ?
+                                time_after_ack = null, class_after_ack = null, state_after_ack = null,
+                                raised_time = ?, alarm_class = ?, alarm_state = ?, delete_time = ?
                                 WHERE alarm_id = ?`,
                                 [
+                                    alarmDetails.raised_time,
                                     alarmDetails.alarm_class,
                                     alarmDetails.alarm_state,
                                     alarmDetails.delete_time,
@@ -457,7 +459,7 @@ function addOrChangeAlarm(db, alarmDetails) {
                                     }
                                 }
                             );
-                        } else if (alarmDetails.alarm_class > existingAlarm.alarm_class) {
+                        } else {
                             // Lower alarm_class: save to after_ack columns
                             db.run(
                                 `UPDATE alarms SET 
@@ -476,25 +478,6 @@ function addOrChangeAlarm(db, alarmDetails) {
                                         reject("Error updating alarm with lower class: " + err.message);
                                     } else {
                                         resolve("Alarm updated with lower class saved to after_ack columns.");
-                                    }
-                                }
-                            );
-                        } else {
-                            // Same alarm_class: update main columns (except req_ack)
-                            db.run(
-                                `UPDATE alarms SET 
-                                alarm_state = ?, delete_time = ?
-                                WHERE alarm_id = ?`,
-                                [
-                                    alarmDetails.alarm_state,
-                                    alarmDetails.delete_time,
-                                    alarmDetails.alarm_id
-                                ],
-                                function (err) {
-                                    if (err) {
-                                        reject("Error updating alarm with same class: " + err.message);
-                                    } else {
-                                        resolve("Alarm updated with same class successfully!");
                                     }
                                 }
                             );
