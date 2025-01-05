@@ -270,23 +270,10 @@ const db = new sqlite3.Database(dbPath, (err) => {
     } else {
         console.log("Connected to the SQLite database.");
 
-        // Define the expected schema for the alarms table
-        const expectedSchema = `
-            alarm_id TEXT PRIMARY KEY NOT NULL,
-            alarm_class INTEGER NOT NULL,
-            alarm_state TEXT NOT NULL,
-            raised_time INTEGER NOT NULL,
-            require_ack BOOLEAN NOT NULL,
-            delete_time INTEGER,
-            class_1_time INTEGER,
-            class_2_time INTEGER,
-            class_3_time INTEGER,
-            time_after_ack INTEGER,
-            class_after_ack INTEGER,
-            state_after_ack TEXT
-        `;
+        // Define the expected number of columns for the alarms table
+        const expectedColumnCount = 12;
 
-        // Function to check if the table structure matches the expected schema
+        // Function to check if the table structure matches the expected column count
         function checkTableStructure() {
             db.all("PRAGMA table_info(alarms);", (err, columns) => {
                 if (err) {
@@ -294,17 +281,21 @@ const db = new sqlite3.Database(dbPath, (err) => {
                     return;
                 }
 
-                const existingSchema = columns.map(col => `${col.name} ${col.type}`).join(", ");
-                
-                if (existingSchema !== expectedSchema) {
-                    console.log("Table schema does not match. Dropping the old table and creating a new one.");
-                    // Drop the old table if the structure does not match
+                // If table doesn't exist, create it
+                if (columns.length === 0) {
+                    console.log("Table doesn't exist, creating a new one.");
+                    createAlarmsTable();
+                    return;
+                }
+
+                // Check if the number of columns matches the expected count
+                if (columns.length !== expectedColumnCount) {
+                    console.log("Column count does not match. Dropping the old table and creating a new one.");
                     db.run("DROP TABLE IF EXISTS alarms;", (err) => {
                         if (err) {
                             console.error("Error dropping table: " + err.message);
                         } else {
                             console.log("Old alarms table dropped.");
-                            // Create a new table with the correct schema
                             createAlarmsTable();
                         }
                     });
