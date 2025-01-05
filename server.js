@@ -270,27 +270,76 @@ const db = new sqlite3.Database(dbPath, (err) => {
     } else {
         console.log("Connected to the SQLite database.");
 
-        // Create a new table for storing alarms
-        db.run(`CREATE TABLE IF NOT EXISTS alarms (
-            alarm_id TEXT PRIMARY KEY NOT NULL, -- Unique identifier for alarm (string)
-            alarm_class INTEGER NOT NULL,       -- Class of alarm (integer: 1, 2, or 3)
-            alarm_state TEXT NOT NULL,          -- State of alarm (string)
-            raised_time INTEGER NOT NULL,       -- Timestamp when alarm was raised (integer, unix timestamp)
-            require_ack BOOLEAN NOT NULL,       -- Whether alarm needs to be acknowledged (boolean)
-            delete_time INTEGER,                -- Time when alarm was deleted (integer, unix timestamp)
-            class_1_time INTEGER,               -- Timestamp for when alarm shall transition to class 1 (integer, unix timestamp)
-            class_2_time INTEGER,               -- Timestamp for when alarm shall transition to class 2 (integer, unix timestamp)
-            class_3_time INTEGER,               -- Timestamp for when alarm shall transition to class 3 (integer, unix timestamp)
-            time_after_ack,                     -- Timestamp when alarm was raised for after ACK (integer, unix timestamp)
-            class_after_ack,                    -- Class of alarm after ACK (integer: 1, 2, or 3)
-            state_after_ack                     -- State of alarm after ACK (string)
-        )`, (err) => {
-            if (err) {
-                console.log("Error creating table: " + err.message);
-            } else {
-                console.log("Alarms table in database created successfully.");
-            }
-        });
+        // Define the expected schema for the alarms table
+        const expectedSchema = `
+            alarm_id TEXT PRIMARY KEY NOT NULL,
+            alarm_class INTEGER NOT NULL,
+            alarm_state TEXT NOT NULL,
+            raised_time INTEGER NOT NULL,
+            require_ack BOOLEAN NOT NULL,
+            delete_time INTEGER,
+            class_1_time INTEGER,
+            class_2_time INTEGER,
+            class_3_time INTEGER,
+            time_after_ack INTEGER,
+            class_after_ack INTEGER,
+            state_after_ack TEXT
+        `;
+
+        // Function to check if the table structure matches the expected schema
+        function checkTableStructure() {
+            db.all("PRAGMA table_info(alarms);", (err, columns) => {
+                if (err) {
+                    console.error("Error fetching table schema: " + err.message);
+                    return;
+                }
+
+                const existingSchema = columns.map(col => `${col.name} ${col.type}`).join(", ");
+                
+                if (existingSchema !== expectedSchema) {
+                    console.log("Table schema does not match. Dropping the old table and creating a new one.");
+                    // Drop the old table if the structure does not match
+                    db.run("DROP TABLE IF EXISTS alarms;", (err) => {
+                        if (err) {
+                            console.error("Error dropping table: " + err.message);
+                        } else {
+                            console.log("Old alarms table dropped.");
+                            // Create a new table with the correct schema
+                            createAlarmsTable();
+                        }
+                    });
+                } else {
+                    console.log("Table schema is correct.");
+                }
+            });
+        }
+
+        // Function to create the alarms table with the correct schema
+        function createAlarmsTable() {
+            db.run(`CREATE TABLE IF NOT EXISTS alarms (
+                alarm_id TEXT PRIMARY KEY NOT NULL,
+                alarm_class INTEGER NOT NULL,
+                alarm_state TEXT NOT NULL,
+                raised_time INTEGER NOT NULL,
+                require_ack BOOLEAN NOT NULL,
+                delete_time INTEGER,
+                class_1_time INTEGER,
+                class_2_time INTEGER,
+                class_3_time INTEGER,
+                time_after_ack INTEGER,
+                class_after_ack INTEGER,
+                state_after_ack TEXT
+            )`, (err) => {
+                if (err) {
+                    console.log("Error creating table: " + err.message);
+                } else {
+                    console.log("Alarms table in database created successfully.");
+                }
+            });
+        }
+
+        // Check the table structure on connection
+        checkTableStructure();
     }
 });
 
