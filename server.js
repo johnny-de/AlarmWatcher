@@ -32,7 +32,7 @@ const { exec } = require('child_process');
  * +----------------------------------------------
 */ 
 
-const filePath = path.join(__dirname, 'data', 'settings.json');
+const settingsPath = path.join(__dirname, 'data', 'settings.json');
 
 // Define default JSON content
 const defaultSettings = {
@@ -54,9 +54,9 @@ const defaultSettings = {
 // Function to load or create settings.json
 function loadOrCreateSettings() {
   // Check if the file exists
-  if (fs.existsSync(filePath)) {
+  if (fs.existsSync(settingsPath)) {
     // If file exists, read and parse it
-    const data = fs.readFileSync(filePath, 'utf-8');
+    const data = fs.readFileSync(settingsPath, 'utf-8');
     try {
       const settings = JSON.parse(data);
       console.log("Loaded settings from file.");
@@ -67,8 +67,8 @@ function loadOrCreateSettings() {
     }
   } else {
     // If file does not exist, create it with default settings
-    fs.mkdirSync(path.dirname(filePath), { recursive: true }); // Create directory if needed
-    fs.writeFileSync(filePath, JSON.stringify(defaultSettings, null, 2));
+    fs.mkdirSync(path.dirname(settingsPath), { recursive: true }); // Create directory if needed
+    fs.writeFileSync(settingsPath, JSON.stringify(defaultSettings, null, 2));
     console.log("Ceated settings file with default settings.");
     return defaultSettings;
   }
@@ -186,7 +186,7 @@ function checkAndGenerateCertificates() {
     }
     // If the private key or certificate files don't exist, generate new certificates
     if (!fs.existsSync(privateKeyPath) || !fs.existsSync(certPath) || !fs.existsSync(certDerPath)) {
-        console.log('HTTPS Certificates not found, generating new ones...');
+        console.log('HTTPS Certificates not found, generating new ones.');
         generateSelfSignedCertificates();
     } else {
         // If the certificates already exist, log a message
@@ -277,11 +277,13 @@ const db = new sqlite3.Database(dbPath, (err) => {
             alarm_state TEXT NOT NULL,          -- State of alarm (string)
             raised_time INTEGER NOT NULL,       -- Timestamp when alarm was raised (integer, unix timestamp)
             require_ack BOOLEAN NOT NULL,       -- Whether alarm needs to be acknowledged (boolean)
-            ack_time INTEGER,                   -- Time when alarm was acknowledged (integer, unix timestamp)
             delete_time INTEGER,                -- Time when alarm was deleted (integer, unix timestamp)
             class_1_time INTEGER,               -- Timestamp for when alarm shall transition to class 1 (integer, unix timestamp)
             class_2_time INTEGER,               -- Timestamp for when alarm shall transition to class 2 (integer, unix timestamp)
-            class_3_time INTEGER                -- Timestamp for when alarm shall transition to class 3 (integer, unix timestamp)
+            class_3_time INTEGER,               -- Timestamp for when alarm shall transition to class 3 (integer, unix timestamp)
+            time_after_ack,                     -- Timestamp when alarm was raised for after ACK (integer, unix timestamp)
+            class_after_ack,                    -- Class of alarm after ACK (integer: 1, 2, or 3)
+            state_after_ack                     -- State of alarm after ACK (string)
         )`, (err) => {
             if (err) {
                 console.log("Error creating table: " + err.message);
@@ -300,18 +302,213 @@ const db = new sqlite3.Database(dbPath, (err) => {
 
 app.get('/', (req, res) => {
     // Return index.html
-    return res.status(200).sendFile(__dirname + '/index.html');
+    return res.status(200).sendFile(__dirname + '/frontend/index.html');
 });
 
 app.get('/settings', (req, res) => {
-    // Return index.html
-    return res.status(200).sendFile(__dirname + '/settings.html');
+    // Return settings.html
+    return res.status(200).sendFile(__dirname + '/frontend/settings.html');
 });
 
 app.get('/features', (req, res) => {
-    // Return index.html
-    return res.status(200).sendFile(__dirname + '/features.html');
+    // Return features.html
+    return res.status(200).sendFile(__dirname + '/frontend/features.html');
 });
+
+/** 
+ * +----------------------------------------------
+ * | ALARM HANDLING
+ * +----------------------------------------------
+*/ 
+
+// Handling for adding or changing an alarm
+function addOrChangeAlarm(db, alarmDetails) {
+    return new Promise((resolve, reject) => {
+        db.get(
+            `SELECT * FROM alarms WHERE alarm_id = ?`,
+            [alarmDetails.alarm_id],
+            (err, existingAlarm) => {
+                if (err) {
+                    reject("Error fetching alarm: " + err.message);
+                } else if (!existingAlarm) {
+                    // No existing alarm, insert a new one
+                    db.run(
+                        `INSERT INTO alarms 
+                        (alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time, class_1_time, class_2_time, class_3_time) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        [
+                            alarmDetails.alarm_id,
+                            alarmDetails.alarm_class,
+                            alarmDetails.alarm_state,
+                            alarmDetails.raised_time,
+                            alarmDetails.require_ack,
+                            alarmDetails.delete_time,
+                            alarmDetails.class_1_time,
+                            alarmDetails.class_2_time,
+                            alarmDetails.class_3_time
+                        ],
+                        function (err) {
+                            if (err) {
+                                reject("Error inserting alarm: " + err.message);
+                            } else {
+                                resolve("Alarm inserted successfully!");
+                            }
+                        }
+                    );
+                } else {
+                    // Existing alarm, update based on req_ack and alarm_class comparison
+                    if (existingAlarm.require_ack) {
+                        // If no reset, continue with current delay
+                        if (alarmDetails.alarm_class < existingAlarm.alarm_class) {
+                            // Higher alarm_class: update main columns (except req_ack)
+                            db.run(
+                                `UPDATE alarms SET 
+                                alarm_class = ?, alarm_state = ?, delete_time = ?
+                                WHERE alarm_id = ?`,
+                                [
+                                    alarmDetails.alarm_class,
+                                    alarmDetails.alarm_state,
+                                    alarmDetails.delete_time,
+                                    alarmDetails.alarm_id
+                                ],
+                                function (err) {
+                                    if (err) {
+                                        reject("Error updating alarm: " + err.message);
+                                    } else {
+                                        resolve("Alarm updated to higher class successfully!");
+                                    }
+                                }
+                            );
+                        } else if (alarmDetails.alarm_class > existingAlarm.alarm_class) {
+                            // Lower alarm_class: save to after_ack columns
+                            db.run(
+                                `UPDATE alarms SET 
+                                time_after_ack = ?, class_after_ack = ?, state_after_ack = ?, 
+                                delete_time = ?
+                                WHERE alarm_id = ?`,
+                                [
+                                    alarmDetails.raised_time,
+                                    alarmDetails.alarm_class,
+                                    alarmDetails.alarm_state,
+                                    alarmDetails.delete_time,
+                                    alarmDetails.alarm_id
+                                ],
+                                function (err) {
+                                    if (err) {
+                                        reject("Error updating alarm with lower class: " + err.message);
+                                    } else {
+                                        resolve("Alarm updated with lower class saved to after_ack columns.");
+                                    }
+                                }
+                            );
+                        } else {
+                            // Same alarm_class: update main columns (except req_ack)
+                            db.run(
+                                `UPDATE alarms SET 
+                                alarm_state = ?, delete_time = ?
+                                WHERE alarm_id = ?`,
+                                [
+                                    alarmDetails.alarm_state,
+                                    alarmDetails.delete_time,
+                                    alarmDetails.alarm_id
+                                ],
+                                function (err) {
+                                    if (err) {
+                                        reject("Error updating alarm with same class: " + err.message);
+                                    } else {
+                                        resolve("Alarm updated with same class successfully!");
+                                    }
+                                }
+                            );
+                        }
+                    } else {
+                        // req_ack = false, simply overwrite the alarm
+                        db.run(
+                            `UPDATE alarms SET 
+                            alarm_class = ?, alarm_state = ?, raised_time = ?, require_ack = ?, delete_time = ?
+                            WHERE alarm_id = ?`,
+                            [
+                                alarmDetails.alarm_class,
+                                alarmDetails.alarm_state,
+                                alarmDetails.raised_time,
+                                alarmDetails.require_ack,
+                                alarmDetails.delete_time,
+                                alarmDetails.alarm_id
+                            ],
+                            function (err) {
+                                if (err) {
+                                    reject("Error overwriting alarm: " + err.message);
+                                } else {
+                                    resolve("Alarm overwritten successfully!");
+                                }
+                            }
+                        );
+                    };
+
+                    // Set class_1_time if currently not set or reset if class_1_time is null
+                    if (!existingAlarm.class_1_time || !alarmDetails.class_1_time) {
+                        db.run(
+                            `UPDATE alarms SET 
+                            class_1_time = ?
+                            WHERE alarm_id = ?`,
+                            [
+                                alarmDetails.class_1_time,
+                                alarmDetails.alarm_id
+                            ],
+                            function (err) {
+                                if (err) {
+                                    reject("Error overwriting alarm: " + err.message);
+                                } else {
+                                    resolve("Class 1 delay overwritten successfully!");
+                                }
+                            }
+                        );
+                    }
+
+                    // Set class_2_time if currently not set or reset if class_2_time is null
+                    if (!existingAlarm.class_2_time || !alarmDetails.class_2_time) {
+                        db.run(
+                            `UPDATE alarms SET 
+                            class_2_time = ?
+                            WHERE alarm_id = ?`,
+                            [
+                                alarmDetails.class_2_time,
+                                alarmDetails.alarm_id
+                            ],
+                            function (err) {
+                                if (err) {
+                                    reject("Error overwriting alarm: " + err.message);
+                                } else {
+                                    resolve("Class 2 delay overwritten successfully!");
+                                }
+                            }
+                        );
+                    }
+
+                    // Set class_3_time if currently not set or reset if class_3_time is null
+                    if (!existingAlarm.class_3_time || !alarmDetails.class_3_time) {
+                        db.run(
+                            `UPDATE alarms SET 
+                            class_3_time = ?
+                            WHERE alarm_id = ?`,
+                            [
+                                alarmDetails.class_3_time,
+                                alarmDetails.alarm_id
+                            ],
+                            function (err) {
+                                if (err) {
+                                    reject("Error overwriting alarm: " + err.message);
+                                } else {
+                                    resolve("Class 2 delay overwritten successfully!");
+                                }
+                            }
+                        );
+                    }
+                }
+            }
+        );
+    });
+}
 
 /** 
  * +----------------------------------------------
@@ -398,10 +595,10 @@ app.get('/api/serverTime', (req, res) => {
 app.get('/api/raiseAlarm', (req, res) => {
     let alarm_id = req.query.alarm_id;
     let alarm_class = Number(req.query.alarm_class);
-    let alarm_state = req.query.alarm_state || "on";              // Default to "on" if not provided
-    let raised_time = Math.floor(Date.now() / 1000);              // Current UNIX timestamp in seconds
-    let require_ack = (req.query.req_ack || false) == "true";     // Default to false if not provided
-    let delete_time = Number(req.query.duration) || null;         // Default to null if not provided
+    let alarm_state = req.query.alarm_state || "on";             // Default to "on" if not provided
+    let raised_time = Math.floor(Date.now() / 1000);             // Current UNIX timestamp in seconds
+    let require_ack = (req.query.req_ack || false) == "true";    // Default to false if not provided
+    let delete_time = Number(req.query.duration) || null;        // Default to null if not provided
     let class_1_time = Number(req.query.delay_class_1) || null;  // Default to null if not provided
     let class_2_time = Number(req.query.delay_class_2) || null;  // Default to null if not provided
     let class_3_time = Number(req.query.delay_class_3) || null;  // Default to null if not provided
@@ -442,29 +639,19 @@ app.get('/api/raiseAlarm', (req, res) => {
     });
 
     // Add the alarm to the table
-    db.run(
-        `INSERT OR REPLACE INTO alarms 
-        (alarm_id, alarm_class, alarm_state, raised_time, require_ack, delete_time, class_1_time, class_2_time, class_3_time) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-            alarm_id,                 // Unique identifier for the alarm
-            alarm_class,              // Current class of the alarm
-            alarm_state,              // State of the alarm (e.g., "on", "active")
-            raised_time,              // Timestamp when the alarm was raised
-            require_ack,              // Boolean indicating if acknowledgment is required
-            delete_time,              // Timestamp for when the alarm should be deleted
-            class_1_time,       // Timestamp for when the alarm transitions to class 1
-            class_2_time,       // Timestamp for when the alarm transitions to class 2
-            class_3_time        // Timestamp for when the alarm transitions to class 3
-        ],
-        function (err) {
-            if (err) {
-                return res.status(400).send("Error inserting alarm: " + err.message);
-            } else {
-                res.status(200).send("Alarm inserted successfully!");
-            }
-        }
-    );
+    addOrChangeAlarm(db, {
+        alarm_id,
+        alarm_class,
+        alarm_state,
+        raised_time,
+        require_ack,
+        delete_time,
+        class_1_time,
+        class_2_time,
+        class_3_time
+    })
+    .then(message => res.status(200).send(message))
+    .catch(error => res.status(400).send(error));
 });
 
 /**
@@ -488,48 +675,71 @@ app.get('/api/raiseAlarm', (req, res) => {
  */
 app.get('/api/ackAlarm', (req, res) => {
     const alarm_id = req.query.alarm_id;
-    const ack_time = Math.floor(Date.now() / 1000);  // Current UNIX timestamp in seconds
 
     // Check if alarm_id is provided
     if (!alarm_id) {
-        return res.status(400).send("Error fetching alarm: 'alarm_id' is required.");
+        return res.status(400).send("Error: 'alarm_id' is required.");
     }
 
-    // Check if the alarm exists in the database
     db.get(
-        `SELECT alarm_id, require_ack FROM alarms WHERE alarm_id = ?`,
+        `SELECT * FROM alarms WHERE alarm_id = ?`,
         [alarm_id],
-        function(err, row) {
+        function(err, alarm) {
             if (err) {
                 return res.status(400).send("Error fetching alarm: " + err.message);
             }
 
-            // If alarm is not found, return 404
-            if (!row) {
+            // If alarm is not found, return success as no action is needed
+            if (!alarm) {
                 return res.status(200).send("Alarm acknowledged successfully if available!");
             }
 
-            // If the alarm requires acknowledgment
-            if (row.require_ack == 1) {
-                // Update the ack_time for this alarm
-                db.run(
-                    `UPDATE alarms SET ack_time = ? WHERE alarm_id = ?`,
-                    [ack_time, alarm_id],
-                    function(err) {
-                        if (err) {
-                            return res.status(400).send("Error acknowledging alarm: " + err.message);
-                        } else {
-                            res.status(200).send("Alarm acknowledged successfully if available!");
+            // If alarm requires acknowledgment
+            if (alarm.require_ack) {
+                // Handle `time_after_ack`, `class_after_ack`, and `state_after_ack` logic
+                if (alarm.time_after_ack && alarm.class_after_ack && alarm.state_after_ack) {
+                    db.run(
+                        `UPDATE alarms SET 
+                        require_ack = false, 
+                        raised_time = time_after_ack, 
+                        alarm_class = class_after_ack, 
+                        alarm_state = state_after_ack, 
+                        time_after_ack = NULL, 
+                        class_after_ack = NULL, 
+                        state_after_ack = NULL 
+                        WHERE alarm_id = ?`,
+                        [alarm_id],
+                        function(err) {
+                            if (err) {
+                                return res.status(400).send("Error processing acknowledgment: " + err.message);
+                            } else {
+                                return res.status(200).send("Alarm acknowledged and after_ack data processed successfully.");
+                            }
                         }
-                    }
-                );
+                    );
+                }
+                else {
+                    db.run(
+                        `UPDATE alarms SET 
+                        require_ack = 0 
+                        WHERE alarm_id = ?`,
+                        [alarm_id],
+                        function(err) {
+                            if (err) {
+                                return res.status(400).send("Error processing acknowledgment: " + err.message);
+                            } else {
+                                return res.status(200).send("Alarm acknowledged and after_ack data processed successfully.");
+                            }
+                        }
+                    );
+                }
             } else {
-                res.status(200).send("Alarm acknowledged successfully if available!");
+                // Alarm does not require acknowledgment
+                res.status(200).send("Alarm acknowledged successfully.");
             }
         }
     );
 });
-
 
 /**
  * @swagger
@@ -551,20 +761,54 @@ app.get('/api/ackAlarm', (req, res) => {
  *         description: Error clearing alarm
  */
 app.get('/api/clearAlarm', (req, res) => {
-    alarm_id = req.query.alarm_id;
+    const alarm_id = req.query.alarm_id;
 
     // Check if alarm_id is provided
     if (!alarm_id) {
         return res.status(400).send("Error clearing alarm: 'alarm_id' is required.");
     }
 
-    // Delete the alarm from the table
-    db.run(`DELETE FROM alarms WHERE alarm_id = ?`, [alarm_id], function (err) {
-        if (err) {
-            return res.status(400).send("Error clearing alarm: " + err.message);
+    // Fetch the alarm to check require_ack
+    db.get(
+        `SELECT require_ack FROM alarms WHERE alarm_id = ?`,
+        [alarm_id],
+        function (err, row) {
+            if (err) {
+                return res.status(400).send("Error fetching alarm: " + err.message);
+            }
+
+            if (!row) {
+                return res.status(200).send("Alarm cleared successfully if available!");
+            }
+
+            // If acknowledgment is required, set delete_time instead of deleting
+            if (row.require_ack == 1) {
+                const currentTime = Math.floor(Date.now() / 1000); // Current UNIX timestamp
+                db.run(
+                    `UPDATE alarms SET delete_time = ? WHERE alarm_id = ?`,
+                    [currentTime, alarm_id],
+                    function (err) {
+                        if (err) {
+                            return res.status(400).send("Error updating delete_time: " + err.message);
+                        }
+                        res.status(200).send("Alarm marked for deletion.");
+                    }
+                );
+            } else {
+                // Delete the alarm if acknowledgment is not required
+                db.run(
+                    `DELETE FROM alarms WHERE alarm_id = ?`,
+                    [alarm_id],
+                    function (err) {
+                        if (err) {
+                            return res.status(400).send("Error clearing alarm: " + err.message);
+                        }
+                        res.status(200).send("Alarm cleared successfully!");
+                    }
+                );
+            }
         }
-        res.status(200).send("Alarm cleared successfully if available!");
-    });
+    );
 });
 
 /**
@@ -771,12 +1015,12 @@ async function sendNotification(messageAlarm, messageState, messageClass) {
         // Send notification to all stored subscriptions
         const promises = subscriptions.map(subscription => 
             webPush.sendNotification(subscription, notificationPayload)
-                .catch(error => console.error('Error sending notification:', error))
+//                .catch(error => console.error('Error sending notification:', error))
         );
         
         await Promise.all(promises);  // Wait for all notifications to be sent
     } catch (error) {
-        console.error("Error while sending notifications:", error);  // Log the error or handle it as needed
+//        console.error("Error while sending notifications:", error);  // Log the error or handle it as needed
     }
 }
 
@@ -881,7 +1125,7 @@ app.post('/setSettings', (req, res) => {
  * +----------------------------------------------
 */ 
 
-// Endpoint to get settings
+// Endpoint to get version
 app.get('/getVersion', (req, res) => {
     res.send(version);
 });
@@ -972,7 +1216,7 @@ function deleteExpiredAlarms() {
     date = Date.now();
     currentTime = Math.floor(date / 1000);  // Get current UNIX timestamp
 
-    db.run(`DELETE FROM alarms WHERE delete_time IS NOT NULL AND (require_ack = 0 OR (require_ack = 1 AND ack_time IS NOT NULL)) AND delete_time <= ?`, [currentTime], function (err) {
+    db.run(`DELETE FROM alarms WHERE delete_time IS NOT NULL AND require_ack = 0 AND delete_time <= ?`, [currentTime], function (err) {
         if (err) {
             console.error("Error deleting expired alarms: " + err.message);
         } else {
@@ -988,78 +1232,57 @@ setInterval(deleteExpiredAlarms, 1000);  // 1000ms = 1 second
 
 // Function to update alarm class based on times
 function updateAlarmClasses() {
-    const date = Date.now();
-    const currentTime = Math.floor(date / 1000);  // Get current UNIX timestamp
+    const currentTime = Math.floor(Date.now() / 1000); // Current UNIX timestamp
 
-    // Fetch alarms with class_1_time, class_2_time, or class_3_time in the past
     db.all(
-        `SELECT * FROM alarms WHERE class_1_time <= ? OR class_2_time <= ? OR class_3_time <= ?`,
-        [currentTime, currentTime, currentTime], function (err, alarms) {
+        `SELECT * FROM alarms WHERE 
+        (class_1_time IS NOT NULL AND class_1_time <= ?) OR 
+        (class_2_time IS NOT NULL AND class_2_time <= ?) OR 
+        (class_3_time IS NOT NULL AND class_3_time <= ?)`,
+        [currentTime, currentTime, currentTime],
+        function (err, alarms) {
             if (err) {
                 console.error("Error fetching alarms: " + err.message);
                 return;
             }
 
-            // Process each alarm to check for necessary updates
-            alarms.forEach(alarm => {
-                // Check for class_1_time updates
+            if (!alarms || alarms.length === 0) {
+                return;
+            }
+
+            alarms.forEach((alarm) => {
+                let newClass = null;
+                let updatedDetails = { ...alarm };
+
                 if (alarm.class_1_time && alarm.class_1_time <= currentTime) {
-                    // Reset class_1_time and update alarm_class if necessary
-                    db.run(
-                        `UPDATE alarms SET class_1_time = NULL, alarm_class = 1 WHERE alarm_id = ?`, [alarm.alarm_id], function (err) {
-                            if (err) {
-                                console.error(`Error updating alarm ID ${alarm.id} for class 1: ` + err.message);
-                            } else if (this.changes > 0) {
-                                console.log(`Alarm ID ${alarm.id} updated to class 1.`);
-                            }
-                        }
-                    );
-
-                    // Send notification if alarm_class has changed
-                    if (alarm.alarm_class != 1) {
-                        // Send notification
-                        sendNotification(alarm.alarm_id, alarm.alarm_state, 1);
-                    }
+                    newClass = 1;
+                    updatedDetails.class_1_time = null;
+                } else if (alarm.class_2_time && alarm.class_2_time <= currentTime) {
+                    newClass = 2;
+                    updatedDetails.class_2_time = null;
+                } else if (alarm.class_3_time && alarm.class_3_time <= currentTime) {
+                    newClass = 3;
+                    updatedDetails.class_3_time = null;
                 }
 
-                // Check for class_2_time updates
-                if (alarm.class_2_time && alarm.class_2_time <= currentTime) {
-                    // Reset class_2_time and update alarm_class if necessary
-                    db.run(
-                        `UPDATE alarms SET class_2_time = NULL, alarm_class = 2 WHERE alarm_id = ?`, [alarm.alarm_id], function (err) {
-                            if (err) {
-                                console.error(`Error updating alarm ID ${alarm.id} for class 2: ` + err.message);
-                            } else if (this.changes > 0) {
-                                console.log(`Alarm ID ${alarm.id} updated to class 2.`);
-                            }
-                        }
-                    );
+                if (newClass !== null && newClass !== alarm.alarm_class) {
+                    updatedDetails.alarm_class = newClass;
 
-                    // Send notification if alarm_class has changed
-                    if (alarm.alarm_class != 2) {
-                        // Send notification
-                        sendNotification(alarm.alarm_id, alarm.alarm_state, 2);
-                    }
-                }
-
-                // Check for class_3_time updates
-                if (alarm.class_3_time && alarm.class_3_time <= currentTime) {
-                    // Reset class_3_time and update alarm_class if necessary
-                    db.run(
-                        `UPDATE alarms SET class_3_time = NULL, alarm_class = 3 WHERE alarm_id = ?`, [alarm.alarm_id], function (err) {
-                            if (err) {
-                                console.error(`Error updating alarm ID ${alarm.id} for class 3: ` + err.message);
-                            } else if (this.changes > 0) {
-                                console.log(`Alarm ID ${alarm.id} updated to class 3.`);
-                            }
-                        }
-                    );
+                    addOrChangeAlarm(db, updatedDetails)
+                        .then(() => {
+                            console.log(`Alarm ID ${alarm.alarm_id} updated to class ${newClass}.`);
+                            sendNotification(alarm.alarm_id, updatedDetails.alarm_state, newClass);
+                        })
+                        .catch((err) => {
+                            console.error(
+                                `Error updating alarm ID ${alarm.alarm_id} to class ${newClass}: ${err}`
+                            );
+                        });
                 }
             });
         }
     );
 }
-
 
 // Set an interval to check and update alarm classes every second
 setInterval(updateAlarmClasses, 1000);  // 1000ms = 1 second
@@ -1071,7 +1294,7 @@ setInterval(updateAlarmClasses, 1000);  // 1000ms = 1 second
 */ 
 
 process.on('SIGTERM', () => {
-    console.log('Received SIGTERM, shutting down gracefully...');
+    console.log('Received SIGTERM, shutting down gracefully.');
     db.close(() => {
         console.log('Closed the database connection.');
         process.exit(0); // Exit with code 0 to signal a clean exit
@@ -1079,7 +1302,7 @@ process.on('SIGTERM', () => {
 });
 
 process.on('SIGINT', () => {
-    console.log('Received SIGINT, shutting down gracefully...');
+    console.log('Received SIGINT, shutting down gracefully.');
     db.close(() => {
         console.log('Closed the database connection.');
         process.exit(0); // Exit with code 0 to signal a clean exit

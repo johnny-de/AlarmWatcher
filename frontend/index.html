@@ -226,7 +226,7 @@
                 buttonContainer.style.display = 'flex'; // Use flexbox to align buttons
 
                 // Create the Ack button if the alarm requires acknowledgment
-                if (alarm.require_ack === 1 && alarm.ack_time === null) {
+                if (alarm.require_ack === 1) {
                     const ackButton = document.createElement('button');
                     ackButton.classList.add('ack-button');
                     ackButton.onclick = () => acknowledgeAlarm(alarm.alarm_id);
