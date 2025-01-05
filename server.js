@@ -6,7 +6,7 @@
  * +----------------------------------------------
 */ 
 
-const version = 'v1.3.0';
+const version = 'v1.3.1';
 
 /** 
  * +----------------------------------------------
@@ -1187,7 +1187,7 @@ app.post('/setSettings', (req, res) => {
 
     // Save changed settings to file
     try {
-        fs.writeFileSync(filePath, JSON.stringify(settings, null, 2));
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
         console.log("New settings saved to file successfully.");
     } catch (err) {
         console.error("Error saving new settings to file:", err);
